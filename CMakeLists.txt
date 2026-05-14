@@ -20,9 +20,10 @@ if (POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
+# Find dependencies
+find_package(BURST REQUIRED)
+
 if (NOT ONLY_TESTING)
-    # Find dependencies
-    find_package(BURST REQUIRED)
     
     # Add the executable target
     add_executable(robot_start_position src/robot_start_position.cpp)
