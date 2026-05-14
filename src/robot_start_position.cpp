@@ -4,6 +4,7 @@
 #include <variant>
 #include <list>
 #include <utility>
+#include <concepts>
 #include <exception>
 
 #include <BURST/geometry.hpp>
@@ -12,7 +13,7 @@
 #define CONCAT(a, b) a##b
 #define CONCAT_LINE(a, b) CONCAT(a, b)
 
-template <typename F>
+template <typename F> requires std::invocable<F&>
 struct defer : F {
     ~defer() { static_cast<F&>(*this)(); }
 };
