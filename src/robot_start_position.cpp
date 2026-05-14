@@ -7,7 +7,7 @@
 std::variant<BURST::geometry::Polygon2D, std::string> read_polygon(std::istream& in) {
     // Extract polygon as a string
     std::string string_repr;
-    in >> string_repr;
+    std::getline(in, string_repr);
     std::istringstream is(string_repr);
     // Attempt to parse the polygon
     BURST::geometry::Polygon2D polygon;
