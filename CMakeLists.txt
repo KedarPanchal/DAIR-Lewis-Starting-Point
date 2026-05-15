@@ -23,8 +23,17 @@ endif()
 # Find dependencies
 find_package(BURST REQUIRED)
 
-# Add the executable target
-add_executable(robot_start_position src/robot_start_position.cpp)
+if (NOT ONLY_TESTING)
+    # Add the executable target
+    add_executable(robot_start_position src/robot_start_position.cpp)
+    
+    # Link libraries and include headers
+    target_include_directories(robot_start_position PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    target_link_libraries(robot_start_position PRIVATE BURST::BURST)
+endif()
 
-# Link libraries
-target_link_libraries(robot_start_position PRIVATE BURST::BURST)
+# Build tests if needed
+if (BUILD_TESTING OR ONLY_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
