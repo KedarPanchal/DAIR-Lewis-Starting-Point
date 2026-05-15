@@ -32,11 +32,11 @@ inline std::list<std::pair<BURST::numeric::fscalar, BURST::numeric::fscalar>> re
     std::istringstream is{parameter_line};
 
     // Extract the number of parameter pairs (layers)
-    int layer_count;
+    unsigned int layer_count;
     if (!(is >> layer_count)) return {};
     
     std::list<std::pair<BURST::numeric::fscalar, BURST::numeric::fscalar>> parameters;
-    for (size_t i = 0; i < layer_count; ++i) {
+    for (unsigned int i = 0; i < layer_count; ++i) {
         std::string l_str, o_max_str;
         if (!(is >> l_str >> o_max_str)) return {};
         try {
