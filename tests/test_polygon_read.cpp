@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <fstream>
+#include <string>
 #include <variant>
 #include <set>
 
@@ -8,7 +9,9 @@
 
 // Test for correct load of a non-holed polygon from a file
 TEST(PolygonReadTest, NonHoledPolygon) {
-    std::ifstream file("build/tests/test_data/non_holed_square_1_layer.dat");
+    std::string file_path = "build/tests/test_data/non_holed_square_1_layer.dat";
+    std::ifstream file(file_path);
+    ASSERT_TRUE(file.is_open()) << "Failed to open test file: " << file_path;
     auto result = read_polygon(file);
 
     ASSERT_TRUE(std::holds_alternative<BURST::geometry::HoledPolygon2D>(result)) << "Expected a Polygon2D, got an error with: " << std::get<std::string>(result);
@@ -31,7 +34,9 @@ TEST(PolygonReadTest, NonHoledPolygon) {
 
 // Test for correct load of a holed polygon from a file
 TEST(PolygonReadTest, HoledPolygon) {
-    std::ifstream file("build/tests/test_data/holed_square_3_layer.dat");
+    std::string file_path = "build/tests/test_data/holed_square_3_layer.dat";
+    std::ifstream file(file_path);
+    ASSERT_TRUE(file.is_open()) << "Failed to open test file: " << file_path;
     auto result = read_polygon(file);
 
     ASSERT_TRUE(std::holds_alternative<BURST::geometry::HoledPolygon2D>(result)) << "Expected a Polygon2D, got an error with: " << std::get<std::string>(result);
