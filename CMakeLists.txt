@@ -24,7 +24,6 @@ endif()
 find_package(BURST REQUIRED)
 
 if (NOT ONLY_TESTING)
-    
     # Add the executable target
     add_executable(robot_start_position src/robot_start_position.cpp)
     
@@ -34,7 +33,7 @@ if (NOT ONLY_TESTING)
 endif()
 
 # Build tests if needed
-include(CTest)
 if (BUILD_TESTING OR ONLY_TESTING)
+    enable_testing()
     add_subdirectory(tests)
 endif()

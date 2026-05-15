@@ -1,5 +1,6 @@
-include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 include(FetchContent)
+include(GoogleTest)
 
 FetchContent_Declare(
     googletest
@@ -10,14 +11,14 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Define the address sanitizer flag based on the C compiler
-if (MSCV)
+if (MSVC)
     set(ASAN_FLAG "/fsanitize=address")
 else()
     set(ASAN_FLAG "-fsanitize=address")
 endif()
 
 # Check if address sanitizer is supported
-check_c_compiler_flag(${ASAN_FLAG} ASAN_SUPPORTED)
+check_cxx_compiler_flag(${ASAN_FLAG} ASAN_SUPPORTED)
 
 # Copy over input data files used for testing
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -35,8 +36,10 @@ if (TEST_SCOPE STREQUAL "all")
 
     if (ASAN_SUPPORTED)
         target_compile_options(test_all PRIVATE ${ASAN_FLAG})
-        target_link_libraries(test_all PRIVATE ${ASAN_FLAG})
+        target_link_options(test_all PRIVATE ${ASAN_FLAG})
     endif()
+
+    gtest_discover_tests(test_all)
 else()
     # Polygon reading tests
     add_executable(test_polygon_read
@@ -64,4 +67,7 @@ else()
         target_compile_options(test_parameter_read PRIVATE ${ASAN_FLAG})
         target_link_options(test_parameter_read PRIVATE ${ASAN_FLAG})
     endif()
+
+    gtest_discover_tests(test_polygon_read)
+    gtest_discover_tests(test_parameter_read)
 endif()
