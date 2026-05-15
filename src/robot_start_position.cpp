@@ -31,23 +31,17 @@
  */
 
 int main() {
-    // Maintain an error flag so that we can report all errors at once instead of just the first one encountered
-    bool error_flag = false;
-
     // Read wall space from standard input
     auto maybe_wall_space = read_polygon(std::cin);
     if (std::holds_alternative<std::string>(maybe_wall_space)) {
-        DEFER({ std::cerr << "Error: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << std::endl; });
-        error_flag = true;
+        std::cerr << "Error: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << std::endl;
+        return 1;
     }
     auto wall_space = std::get<BURST::geometry::HoledPolygon2D>(maybe_wall_space);
     auto parameters = read_wallpapering_parameters(std::cin);
     if (parameters.empty()) {
-        DEFER({ std::cerr << "Error: Invalid wallpapering parameters or none provided" << std::endl; });
-        error_flag = true;
+        std::cerr << "Error: Invalid wallpapering parameters or none provided" << std::endl;
+        return 1;
     }
-    
-    // Return, casuing all deferred error messages to be printed if any errors were encountered
-    if (error_flag) return 1;
 }
 

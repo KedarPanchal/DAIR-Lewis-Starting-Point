@@ -1,7 +1,6 @@
 #ifndef UTILITIES_HPP
 #define UTILITIES_HPP
 
-#include <concepts>
 #include <variant>
 #include <list>
 #include <string>
@@ -10,21 +9,6 @@
 
 #include <BURST/geometry.hpp>
 #include <BURST/numeric.hpp>
-
-// -- UTILITY MACROS ----------------------------------------------------------
-
-#define CONCAT(a, b) a##b
-#define CONCAT_LINE(a, b) CONCAT(a, b)
-
-template <typename F> requires std::invocable<F&>
-struct defer : F {
-    ~defer() { static_cast<F&>(*this)(); }
-};
-
-#define DEFER(...) do { \
-    auto CONCAT_LINE(_defer_, __LINE__) = ::defer{[&] __VA_ARGS__}; \
-} while(0)
-
 
 // -- UTILITY FUNCTIONS -------------------------------------------------------
 
