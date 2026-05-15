@@ -79,3 +79,21 @@ TEST(PolygonReadTest, HoledPolygon) {
     }
     ASSERT_TRUE(expected_hole_vertices.empty()) << "Not all expected vertices were present in the parsed polygon's holes";
 }
+
+// Test failed load of a non-holed polygon from a file with invalid format
+TEST(PolygonReadTest, InvalidNonHoledPolygon) {
+    std::string file_path = "build/tests/test_data/invalid_non_holed_polygon_invalid_parameter_format.dat";
+    std::ifstream file(file_path);
+    ASSERT_TRUE(file.is_open()) << "Failed to open test file: " << file_path;
+    auto result = read_polygon(file);
+    ASSERT_TRUE(std::holds_alternative<std::string>(result)) << "Expected an error string, but got a polygon instead";
+}
+
+// Test failed load of a holed polygon from a file with invalid format
+TEST(PolygonReadTest, InvalidHoledPolygon) {
+    std::string file_path = "build/tests/test_data/invalid_holed_polygon_invalid_parameter_count.dat";
+    std::ifstream file(file_path);
+    ASSERT_TRUE(file.is_open()) << "Failed to open test file: " << file_path;
+    auto result = read_polygon(file);
+    ASSERT_TRUE(std::holds_alternative<std::string>(result)) << "Expected an error string, but got a polygon instead";
+}
