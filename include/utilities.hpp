@@ -29,13 +29,13 @@ struct defer : F {
 // -- UTILITY FUNCTIONS -------------------------------------------------------
 
 // Reads a polygon from the input stream
-inline std::variant<BURST::geometry::Polygon2D, std::string> read_polygon(std::istream& in) {
+inline std::variant<BURST::geometry::HoledPolygon2D, std::string> read_polygon(std::istream& in) {
     // Extract polygon as a string
     std::string string_repr;
     std::getline(in, string_repr);
     std::istringstream is{string_repr};
     // Attempt to parse the polygon
-    BURST::geometry::Polygon2D polygon;
+    BURST::geometry::HoledPolygon2D polygon;
     // If successfully parsed, return the polygon; otherwise, return the original string
     if (is >> polygon) return polygon;
     else return string_repr;

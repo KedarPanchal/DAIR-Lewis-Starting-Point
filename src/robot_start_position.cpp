@@ -22,8 +22,9 @@
  */
 
 /* POLYGON INPUT FORMAT
- * Non-holed polygon: <number of vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>
- *   - e.g. 4 0 0 10 0 10 10 0 10
+ * Non-holed polygon: <number of vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  0
+ *   - e.g. 4 0 0 10 0 10 10 0 10  0
+ *   - Note the double space between the vertices and the hole count (which is 0 for non-holed polygons)
  * Holed polygon: <number of vertices in boundary> <x1> <y1> ... <xn> <yn>  <number of holes> <number of vertices in hole 1> <x1> <y1> ... <xm> <ym>  <number of vertices in hole 2> <x1> <y1> ... <xp> <yp> ...
  *  - e.g. 4 0 0 10 0 10 10 0 10  2 4 3 3 3 7 7 7 7 3  4 1 1 1 2 2 2 2 1
  *  - Note the double spaces between the boundary and the holes and between the holes themselves
@@ -39,7 +40,7 @@ int main() {
         DEFER({ std::cerr << "Error: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << std::endl; });
         error_flag = true;
     }
-    auto wall_space = std::get<BURST::geometry::Polygon2D>(maybe_wall_space);
+    auto wall_space = std::get<BURST::geometry::HoledPolygon2D>(maybe_wall_space);
     auto parameters = read_wallpapering_parameters(std::cin);
     if (parameters.empty()) {
         DEFER({ std::cerr << "Error: Invalid wallpapering parameters or none provided" << std::endl; });
