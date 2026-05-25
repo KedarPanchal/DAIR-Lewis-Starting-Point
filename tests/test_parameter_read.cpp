@@ -21,7 +21,7 @@ TEST(ParameterReadTest, SingleValidParameterLayer) {
 
     // Check that the parameters were parsed correctly
     std::list<std::pair<BURST::numeric::fscalar, BURST::numeric::fscalar>> correct_parameters = {{1, 1}};
-    for (size_t i = 0; i < parameters.size(); ++i) {
+    for (size_t i = 0; !parameters.empty(); ++i) {
         ASSERT_EQ(parameters.front().first, correct_parameters.front().first) << "Parameter l for layer " << i << " was parsed incorrectly";
         ASSERT_EQ(parameters.front().second, correct_parameters.front().second) << "Parameter o_max for layer " << i << " was parsed incorrectly";
         parameters.pop_front();
@@ -44,7 +44,7 @@ TEST(ParameterReadTest, MultipleValidParameterLayer) {
 
     // Check that the parameters were parsed correctly
     std::list<std::pair<BURST::numeric::fscalar, BURST::numeric::fscalar>> correct_parameters = {{3, 2}, {2, 1}, {1, 0.5}};
-    for (size_t i = 0; i < parameters.size(); ++i) {
+    for (size_t i = 0; !parameters.empty(); ++i) {
         ASSERT_EQ(parameters.front().first, correct_parameters.front().first) << "Parameter l for layer " << i << " was parsed incorrectly";
         ASSERT_EQ(parameters.front().second, correct_parameters.front().second) << "Parameter o_max for layer " << i << " was parsed incorrectly";
         parameters.pop_front();
