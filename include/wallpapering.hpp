@@ -1,0 +1,4 @@
+#ifndef WALLPAPERING_HPP
+#define WALLPAPERING_HPP
+
+#endif

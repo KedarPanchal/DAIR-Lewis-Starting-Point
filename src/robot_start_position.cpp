@@ -4,6 +4,7 @@
 
 #include <BURST/geometry.hpp>
 #include <BURST/numeric.hpp>
+#include <BURST/wall_space.hpp>
 
 #include "utilities.hpp"
 
@@ -37,7 +38,14 @@ int main() {
         std::cerr << "Error: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << std::endl;
         return 1;
     }
-    auto wall_space = std::get<BURST::geometry::HoledPolygon2D>(maybe_wall_space);
+    auto wall_space_polygon = std::get<BURST::geometry::HoledPolygon2D>(maybe_wall_space);
+    auto wall_space = BURST::geometry::WallSpace::create(wall_space_polygon);
+    if (!wall_space) {
+        std::cerr << "Error: Failed to create wall space from degenerate polygon" << std::endl;
+        return 1;
+    }
+    
+    // Read parameters from standard input
     auto parameters = read_wallpapering_parameters(std::cin);
     if (parameters.empty()) {
         std::cerr << "Error: Invalid wallpapering parameters or none provided" << std::endl;
