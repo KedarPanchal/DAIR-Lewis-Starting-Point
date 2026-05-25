@@ -25,7 +25,8 @@ using HoledPolygon = CGAL::Polygon_with_holes_2<Traits>;
 using Transformation = CGAL::Aff_transformation_2<Kernel>;
 
 // Numeric types
+constexpr unsigned int HP_PRECISION = 1000;
 using fscalar = Kernel::FT;
-using hpscalar = boost::multiprecision::mpfr_float_100; 
+using hpscalar = boost::multiprecision::number<boost::multiprecision::mpfr_float_backend<HP_PRECISION>>; 
 
 #endif
