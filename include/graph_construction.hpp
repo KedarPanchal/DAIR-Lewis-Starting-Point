@@ -29,8 +29,8 @@ namespace std {
 // Adjacency list representation of the graph
 using Graph = std::unordered_map<Node, std::list<std::pair<Node, fscalar>>>;
 
-// AddLayer algorithm from Lewis's doctoral dissertation (Algorithm 3)
-inline void addLayer(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
+// Adds layers around the boundary of a single polygon
+inline void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
     size_t node_id = 0;
 
     for (auto eit = w.edges_begin(); eit != w.edges_end(); ++eit) {
@@ -60,6 +60,15 @@ inline void addLayer(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
                 x1 += direction * o;
             }
         }
+    }
+}
+
+// AddLayer algorithm from Lewis's doctoral dissertation (Algorithm 3)
+// Well, AddLayerHelper is the actual algorithm, but it's applied to every boundary and hole of the polygon
+inline void addLayer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) {
+    addLayerHelper(w.outer_boundary(), g, l, o_max);
+    for (auto hit = w.holes_begin(); hit != w.holes_end(); ++hit) {
+        addLayerHelper(*hit, g, l, o_max);
     }
 }
 
