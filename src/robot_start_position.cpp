@@ -8,20 +8,6 @@
 
 #include "utilities.hpp"
 
-
-/* PLANNING COMMENT (DELETE ONCE DONE)
- * Things to read from standard input:
- * - The wall space polygon, which can have some or no holes (done, just make some test files for this)
- * - The parameters for the wallpapering of the wall space, which are, for each layer, pairs of:
- *   - The length of the segment partitions of each edge (l)
- *   - The maximum offset between partition start points of adjacent layers (o_max)
- *
- * Input file format:
- * Line 1: The wall space polygon, however CGAL likes that formatted
- * Line 2: The number of layers (n) followed by pairs of l and o_max for each layer with everything separated by spaces
- * Line 3: The maximum rotational error for the robot (theta_max)
- */
-
 /* POLYGON INPUT FORMAT
  * Non-holed polygon: <number of vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  0
  *   - e.g. 4 0 0 10 0 10 10 0 10  0
