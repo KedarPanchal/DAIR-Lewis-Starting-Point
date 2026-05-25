@@ -3,6 +3,7 @@
 
 #include <list>
 #include <unordered_map>
+#include <optional>
 
 #include <BURST/geometry.hpp>
 #include <BURST/wall_space.hpp>
@@ -10,6 +11,8 @@
 
 #include <CGAL/number_utils.h>
 #include <CGAL/Aff_transformation_2.h>
+
+#include <boost/multiprecision/mpfr.hpp>
 
 // Graph node, with numeric ID for Johnson's algorithm
 struct Node {
@@ -31,7 +34,7 @@ namespace std {
 }
 
 // Adjacency list representation of the graph
-using Graph = std::unordered_map<Node, std::list<Node>>;
+using Graph = std::unordered_map<Node, std::list<std::pair<Node, BURST::numeric::fscalar>>>;
 
 // AddLayer algorithm from Lewis's doctoral dissertation (Algorithm 3)
 inline void addLayer(const BURST::geometry::WallSpace& w, Graph& g, BURST::numeric::fscalar l, BURST::numeric::fscalar o_max) {
@@ -42,7 +45,7 @@ inline void addLayer(const BURST::geometry::WallSpace& w, Graph& g, BURST::numer
         if (length == l) {
             // Add segment *eit as a node of g
             Node node{node_id++, *eit};
-            g[node] = std::list<Node>{};
+            g[node] = std::list<std::pair<Node, BURST::numeric::fscalar>>{};
         } else if (length > l) {
             // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT (BURST::numeric::fscalar)
             size_t ceiling = static_cast<size_t>(CGAL::to_double((length - l) / o_max)) + 1;
@@ -59,11 +62,24 @@ inline void addLayer(const BURST::geometry::WallSpace& w, Graph& g, BURST::numer
                 x2 = x1 + direction * l;
                 // Add segment x1x2 as a node of g
                 Node node{node_id++, BURST::geometry::Segment2D(x1, x2)};
+                g[node] = std::list<std::pair<Node, BURST::numeric::fscalar>>{};
                 // x_1 <- x_1 translated o along *eit
                 x1 += direction * o;
             }
         }
     }
+}
+
+// Helper function for intersection from a raycast
+
+// HasEdge algorithm from Lewis's doctoral dissertation (Algorithm 4)
+inline std::optional<BURST::numeric::fscalar> hasEdge(const BURST::geometry::WallSpace& w, const BURST::geometry::Segment2D source, const BURST::geometry::Segment2D& target, BURST::numeric::hpscalar theta_max) {
+    auto d1 = BURST::geometry::Vector2D{source.source(), target.target()}.transform(BURST::geometry::Transformation(CGAL::ROTATION, boost::multiprecision::sin(theta_max), boost::multiprecision::cos(theta_max)));
+    auto d2 = BURST::geometry::Vector2D{source.target(), target.source()}.transform(BURST::geometry::Transformation(CGAL::ROTATION, boost::multiprecision::sin(-theta_max), boost::multiprecision::cos(-theta_max)));
+    BURST::numeric::hpscalar angle = boost::multiprecision::acos(BURST::numeric::to_high_precision(d1 * d2 / (CGAL::sqrt(d1.squared_length()) * CGAL::sqrt(d2.squared_length()))));
+    if (angle > CGAL_PI) return std::nullopt;
+
+    // Compute p1 and p2
 }
 
 #endif
