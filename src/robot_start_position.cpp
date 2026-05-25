@@ -2,12 +2,7 @@
 #include <string>
 #include <variant>
 
-#include <BURST/geometry.hpp>
-#include <BURST/numeric.hpp>
-#include <BURST/wall_space.hpp>
-
 #include "utilities.hpp"
-#include "graph_construction.hpp"
 
 /* POLYGON INPUT FORMAT
  * Non-holed polygon: <number of vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  0
@@ -20,18 +15,12 @@
 
 int main() {
     // Read wall space from standard input
-    auto maybe_wall_space_polygon = read_polygon(std::cin);
-    if (std::holds_alternative<std::string>(maybe_wall_space_polygon)) {
-        std::cerr << "Error: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space_polygon) << std::endl;
+    auto maybe_wall_space = read_polygon(std::cin);
+    if (std::holds_alternative<std::string>(maybe_wall_space)) {
+        std::cerr << "Error: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << std::endl;
         return 1;
     }
-    auto wall_space_polygon = std::get<BURST::geometry::HoledPolygon2D>(maybe_wall_space_polygon);
-    auto maybe_wall_space = BURST::geometry::WallSpace::create(wall_space_polygon);
-    if (!maybe_wall_space) {
-        std::cerr << "Error: Failed to create wall space from degenerate polygon" << std::endl;
-        return 1;
-    }
-    BURST::geometry::WallSpace wall_space = *maybe_wall_space;
+    auto wall_space = std::get<HoledPolygon>(maybe_wall_space);
     
     // Read parameters from standard input
     auto parameters = read_wallpapering_parameters(std::cin);

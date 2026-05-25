@@ -21,19 +21,18 @@ if (POLICY CMP0167)
 endif()
 
 # Find dependencies
-find_package(BURST REQUIRED)
+find_package(Qt6 REQUIRES COMPONENTS Widgets OpenGL)
+find_package(CGAL REQUIRED COMPONENTS Qt6)
+find_package(Boost REQUIRED)
+find_package(MPFR REQUIRED)
 
-if (NOT ONLY_TESTING)
-    # Add the executable target
-    add_executable(robot_start_position src/robot_start_position.cpp)
-    
-    # Link libraries and include headers
-    target_include_directories(robot_start_position PRIVATE ${PROJECT_SOURCE_DIR}/include)
-    target_link_libraries(robot_start_position PRIVATE BURST::BURST)
-endif()
+# Add the executable target
+add_executable(robot_start_position src/robot_start_position.cpp)
 
-# Build tests if needed
-if (BUILD_TESTING OR ONLY_TESTING)
-    enable_testing()
-    add_subdirectory(tests)
-endif()
+# Link libraries and include headers
+target_include_directories(robot_start_position PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(robot_start_position PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 BOOST::boost ${MPFR_LIBRARIES})
+
+# Define preprocessor macros
+target_compile_definitions(robot_start_position PRIVATE CGAL_USE_BASIC_VIEWER)
+
