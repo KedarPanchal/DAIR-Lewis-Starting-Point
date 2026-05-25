@@ -7,6 +7,7 @@
 #include <BURST/wall_space.hpp>
 
 #include "utilities.hpp"
+#include "wallpapering.hpp"
 
 /* POLYGON INPUT FORMAT
  * Non-holed polygon: <number of vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  0
