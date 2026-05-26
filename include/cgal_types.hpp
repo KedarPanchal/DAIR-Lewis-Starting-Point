@@ -2,6 +2,7 @@
 #define CGAL_TYPES_HPP
 
 #include <vector>
+#include <sstream>
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 #include <CGAL/Gps_segment_traits_2.h>
@@ -37,5 +38,13 @@ using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits_2<Kernel, CGAL::AABB_segment_
 constexpr unsigned int HP_PRECISION = 1000;
 using fscalar = Kernel::FT;
 using hpscalar = boost::multiprecision::number<boost::multiprecision::mpfr_float_backend<HP_PRECISION>>; 
+
+// Helper function for converting from fscalar to hpscalar
+
+inline hpscalar to_hpscalar(const fscalar& x) {
+    std::ostringstream str_representation;
+    str_representation << std::setprecision(HP_PRECISION) << x;
+    return hpscalar(str_representation.str());
+}
 
 #endif

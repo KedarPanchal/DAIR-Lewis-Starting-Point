@@ -32,7 +32,7 @@ namespace std {
 }
 
 // Adjacency list representation of the graph
-using Graph = std::unordered_map<Node, std::list<std::pair<Node, fscalar>>>;
+using Graph = std::unordered_map<Node, std::list<std::pair<Node, Vector>>>;
 
 // Adds layers around the boundary of a single polygon
 inline void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
@@ -43,7 +43,7 @@ inline void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max)
         if (length == l) {
             // Add segment *eit as a node of g
             Node node{node_id++, *eit};
-            g[node] = std::list<std::pair<Node, fscalar>>{};
+            g[node] = std::list<std::pair<Node, Vector>>{};
         } else if (length > l) {
             // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT (BURST::numeric::fscalar)
             size_t ceiling = static_cast<size_t>(CGAL::to_double((length - l) / o_max)) + 1;
@@ -60,7 +60,7 @@ inline void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max)
                 x2 = x1 + direction * l;
                 // Add segment x1x2 as a node of g
                 Node node{node_id++, Segment(x1, x2)};
-                g[node] = std::list<std::pair<Node, fscalar>>{};
+                g[node] = std::list<std::pair<Node, Vector>>{};
                 // x_1 <- x_1 translated o along *eit
                 x1 += direction * o;
             }
@@ -108,7 +108,7 @@ inline std::optional<Point> shootRay(const HoledPolygon& w, const Point& source,
 }
 
 // HasEdge algorithm from Lewis's doctoral dissertation (Algorithm 4)
-inline std::optional<fscalar> hasEdge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max) {
+inline std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max) {
     auto d1 = Vector{source.source(), target.target()}
         .transform(Transformation(
                     CGAL::ROTATION, 
@@ -136,6 +136,28 @@ inline std::optional<fscalar> hasEdge(const HoledPolygon& w, const Segment& sour
         ) return std::nullopt;
 
     // Create a quadrilateral with source.source(), source.target(), p1, and p2
+    // and sort it according to angle from the point to the origin.
+    // Sort in ascending order for clockwise ordering
+    boost::container::small_vector<Point, 4> quad{source.source(), source.target(), *p1, *p2};
+    std::sort(quad.begin(), quad.end(), [](const Point& a, const Point& b) {
+        hpscalar angle_a = boost::multiprecision::atan2(to_hpscalar(a.y()), to_hpscalar(a.x()));
+        hpscalar angle_b = boost::multiprecision::atan2(to_hpscalar(b.y()), to_hpscalar(b.x()));
+        return angle_a < angle_b;
+    });
+    Polygon quadrilateral(quad.begin(), quad.end());
+    
+    // Check if any vertices of w are contained in the quadrilateral
+    for (const auto& vertex : w.outer_boundary().vertices()) {
+        if (quadrilateral.has_on_bounded_side(vertex)) return std::nullopt;
+    }
+    for (const auto& hole : w.holes()) {
+        for (const auto& vertex : hole.vertices()) {
+            if (quadrilateral.has_on_bounded_side(vertex)) return std::nullopt;
+        }
+    }
+
+    // Return the mid-angle bisector of d1 and d2
+    return (d1 * CGAL::sqrt(d2.squared_length())) + (d2 * CGAL::sqrt(d1.squared_length()));
 }
 
 #endif
