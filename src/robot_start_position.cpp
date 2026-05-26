@@ -2,24 +2,9 @@
 #include <string>
 #include <variant>
 
-#include <BURST/geometry.hpp>
-#include <BURST/numeric.hpp>
-
+#include "cgal_types.hpp"
 #include "utilities.hpp"
-
-
-/* PLANNING COMMENT (DELETE ONCE DONE)
- * Things to read from standard input:
- * - The wall space polygon, which can have some or no holes (done, just make some test files for this)
- * - The parameters for the wallpapering of the wall space, which are, for each layer, pairs of:
- *   - The length of the segment partitions of each edge (l)
- *   - The maximum offset between partition start points of adjacent layers (o_max)
- *
- * Input file format:
- * Line 1: The wall space polygon, however CGAL likes that formatted
- * Line 2: The number of layers (n) followed by pairs of l and o_max for each layer with everything separated by spaces
- * Line 3: The maximum rotational error for the robot (theta_max)
- */
+#include "graph_construction.hpp"
 
 /* POLYGON INPUT FORMAT
  * Non-holed polygon: <number of vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  0
@@ -32,16 +17,29 @@
 
 int main() {
     // Read wall space from standard input
-    auto maybe_wall_space = read_polygon(std::cin);
+    std::variant<HoledPolygon, std::string> maybe_wall_space = read_polygon(std::cin);
     if (std::holds_alternative<std::string>(maybe_wall_space)) {
         std::cerr << "Error: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << std::endl;
         return 1;
     }
-    auto wall_space = std::get<BURST::geometry::HoledPolygon2D>(maybe_wall_space);
-    auto parameters = read_wallpapering_parameters(std::cin);
+    auto wall_space = std::get<HoledPolygon>(maybe_wall_space);
+    
+    // Read parameters from standard input
+    std::list<std::pair<fscalar, fscalar>> parameters = read_wallpapering_parameters(std::cin);
     if (parameters.empty()) {
         std::cerr << "Error: Invalid wallpapering parameters or none provided" << std::endl;
         return 1;
     }
+
+    // Read theta_max from standard input
+    std::variant<fscalar, std::string> maybe_theta_max = read_theta_max(std::cin);
+    if (std::holds_alternative<std::string>(maybe_theta_max)) {
+        std::cerr << "Error: Invalid theta_max: " << std::get<std::string>(maybe_theta_max) << std::endl;
+        return 1;
+    }
+    auto theta_max = std::get<fscalar>(maybe_theta_max);
+    
+    // Construct the graph
+    Graph graph = construct_graph(wall_space, parameters, theta_max);
 }
 
