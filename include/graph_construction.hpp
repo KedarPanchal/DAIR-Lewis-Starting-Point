@@ -160,4 +160,19 @@ inline std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& sourc
     return (d1 * CGAL::sqrt(d2.squared_length())) + (d2 * CGAL::sqrt(d1.squared_length()));
 }
 
+Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max) {
+    Graph graph;
+    // Add the nodes
+    for (const auto& [l, o_max] : parameters) addLayer(w, graph, l, o_max);
+    // Add the edges
+    for (auto& [node, edges] : graph) {
+        for (auto& [other_node, _] : graph) {
+            auto maybe_edge = hasEdge(w, node.segment, other_node.segment, to_hpscalar(theta_max));
+            if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value());
+        }
+    }
+
+    return graph;
+}
+
 #endif

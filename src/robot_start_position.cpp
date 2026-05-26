@@ -2,7 +2,9 @@
 #include <string>
 #include <variant>
 
+#include "cgal_types.hpp"
 #include "utilities.hpp"
+#include "graph_construction.hpp"
 
 /* POLYGON INPUT FORMAT
  * Non-holed polygon: <number of vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  0
