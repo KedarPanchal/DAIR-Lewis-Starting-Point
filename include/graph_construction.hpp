@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <optional>
 #include <algorithm>
+#include <iterator>
 
 #include <CGAL/squared_distance_2.h>
 

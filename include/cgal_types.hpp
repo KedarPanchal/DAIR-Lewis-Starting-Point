@@ -12,6 +12,7 @@
 #include <CGAL/Segment_2.h>
 #include <CGAL/Vector_2.h>
 #include <CGAL/Polygon_2.h>
+#include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits_2.h>
 #include <CGAL/AABB_segment_primitive_2.h>
