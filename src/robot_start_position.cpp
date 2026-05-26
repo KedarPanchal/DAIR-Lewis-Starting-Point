@@ -17,7 +17,7 @@
 
 int main() {
     // Read wall space from standard input
-    auto maybe_wall_space = read_polygon(std::cin);
+    std::variant<HoledPolygon, std::string> maybe_wall_space = read_polygon(std::cin);
     if (std::holds_alternative<std::string>(maybe_wall_space)) {
         std::cerr << "Error: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << std::endl;
         return 1;
@@ -25,10 +25,21 @@ int main() {
     auto wall_space = std::get<HoledPolygon>(maybe_wall_space);
     
     // Read parameters from standard input
-    auto parameters = read_wallpapering_parameters(std::cin);
+    std::list<std::pair<fscalar, fscalar>> parameters = read_wallpapering_parameters(std::cin);
     if (parameters.empty()) {
         std::cerr << "Error: Invalid wallpapering parameters or none provided" << std::endl;
         return 1;
     }
+
+    // Read theta_max from standard input
+    std::variant<fscalar, std::string> maybe_theta_max = read_theta_max(std::cin);
+    if (std::holds_alternative<std::string>(maybe_theta_max)) {
+        std::cerr << "Error: Invalid theta_max: " << std::get<std::string>(maybe_theta_max) << std::endl;
+        return 1;
+    }
+    auto theta_max = std::get<fscalar>(maybe_theta_max);
+    
+    // Construct the graph
+    Graph graph = construct_graph(wall_space, parameters, theta_max);
 }
 

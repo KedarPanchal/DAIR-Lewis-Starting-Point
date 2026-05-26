@@ -50,4 +50,13 @@ inline std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::
     return parameters;
 }
 
+inline std::variant<fscalar, std::string> read_theta_max(std::istream& in) {
+    std::string string_repr;
+    std::getline(in, string_repr);
+    std::istringstream is{string_repr};
+    fscalar theta_max;
+    if (is >> theta_max) return theta_max;
+    else return string_repr;
+}
+
 #endif
