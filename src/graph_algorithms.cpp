@@ -31,6 +31,7 @@ std::vector<std::vector<int>> floyd_warshall(const Graph& g) {
 }
 
 // ComputeCoveredEdges algorithm from Lewis's doctoral dissertation (Algorithm 5)
+// TODO: Define a hash function for std::pair<Node, Node>
 std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& source, PolygonSet& CCR, const Graph& g) {
     std::vector<std::vector<int>> p = floyd_warshall(g);
     std::unordered_set<std::pair<Node, Node>> covered;
@@ -40,6 +41,7 @@ std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& sourc
         for (const auto& v : neighbors) {
             int s = p[source][u];
             int t = p[std::get<0>(v)][source];
+            PolygonSet ccr_prime = std::get<2>(v);
         }
     }
 
