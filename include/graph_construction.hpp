@@ -79,17 +79,8 @@ inline void addLayer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) 
 }
 
 // shootRay algorithm for checking safe actions
-inline std::optional<Point> shootRay(const HoledPolygon& w, const Point& source, const Vector& direction) {
-    // Construct an AABB tree for raycast queries
-    std::vector<Segment> segments;
-    for (const auto& edge : w.outer_boundary().edges()) segments.push_back(edge);
-    for (const auto hole : w.holes()) {
-        for (const auto& edge : hole.edges()) segments.push_back(edge);
-    }
-
-    AABBTree tree(segments.begin(), segments.end());
-    tree.build();
-
+inline std::optional<Point> shootRay(const HoledPolygon& w, const Point& source, const Vector& direction, const AABBTree& tree) {
+    
     // Find all intersections of the ray with the polygon boundary
     Ray ray(source, direction);
     std::vector<std::optional<AABBTree::Intersection_and_primitive_id<Ray>::Type>> intersections;
@@ -109,7 +100,7 @@ inline std::optional<Point> shootRay(const HoledPolygon& w, const Point& source,
 }
 
 // HasEdge algorithm from Lewis's doctoral dissertation (Algorithm 4)
-inline std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max) {
+inline std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max, const AABBTree& tree) {
     auto d1 = Vector{source.source(), target.target()}
         .transform(Transformation(
                     CGAL::ROTATION, 
@@ -129,8 +120,8 @@ inline std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& sourc
     if (angle > CGAL_PI) return std::nullopt;
 
     // Compute p1 and p2 and check target membership
-    std::optional<Point> p1 = shootRay(w, source.source(), Vector{source.source(), target.target()});
-    std::optional<Point> p2 = shootRay(w, source.target(), Vector{source.target(), target.source()});
+    std::optional<Point> p1 = shootRay(w, source.source(), Vector{source.source(), target.target()}, tree);
+    std::optional<Point> p2 = shootRay(w, source.target(), Vector{source.target(), target.source()}, tree);
     if (
         !p1.has_value() ||
         !p2.has_value() ||
@@ -167,10 +158,21 @@ inline Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fs
     Graph graph;
     // Add the nodes
     for (const auto& [l, o_max] : parameters) addLayer(w, graph, l, o_max);
+
     // Add the edges
+    // Construct an AABB tree for raycast queries
+    std::vector<Segment> segments;
+    for (const auto& edge : w.outer_boundary().edges()) segments.push_back(edge);
+    for (const auto hole : w.holes()) {
+        for (const auto& edge : hole.edges()) segments.push_back(edge);
+    }
+
+    AABBTree tree(segments.begin(), segments.end());
+    tree.build();
+
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
-            auto maybe_edge = hasEdge(w, node.segment, other_node.segment, to_hpscalar(theta_max));
+            auto maybe_edge = hasEdge(w, node.segment, other_node.segment, to_hpscalar(theta_max), tree);
             if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value());
         }
     }
