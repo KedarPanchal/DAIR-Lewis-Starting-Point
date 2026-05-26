@@ -41,6 +41,7 @@ inline std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::
         try {
             fscalar l{l_str};
             fscalar o_max{o_max_str};
+            if (l <= 0 || o_max <= 0) return {};
             parameters.emplace_back(l, o_max);
         } catch (const std::exception& e) { // Don't know the exact exception, so just catch all
             return {};
