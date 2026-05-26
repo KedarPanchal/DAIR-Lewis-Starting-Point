@@ -117,7 +117,8 @@ inline std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& sourc
     // Compute dot product-based angle since CGAL doesn't expose a function for computing angles between vectors 
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
     if (d1.squared_length() == 0 || d2.squared_length() == 0) return std::nullopt;
-    fscalar angle = d1 * d2 / (CGAL::sqrt(d1.squared_length()) * CGAL::sqrt(d2.squared_length()));
+    fscalar cosine = d1 * d2 / (CGAL::sqrt(d1.squared_length()) * CGAL::sqrt(d2.squared_length()));
+    hpscalar angle = boost::multiprecision::acos(to_hpscalar(cosine));
     if (angle > CGAL_PI) return std::nullopt;
 
     // Compute p1 and p2 and check target membership
