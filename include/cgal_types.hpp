@@ -40,12 +40,13 @@ constexpr unsigned int HP_PRECISION = 1000;
 using fscalar = Kernel::FT;
 using hpscalar = boost::multiprecision::number<boost::multiprecision::mpfr_float_backend<HP_PRECISION>>; 
 
-// Helper function for converting from fscalar to hpscalar
-
-inline hpscalar to_hpscalar(const fscalar& x) {
+// Helper function for converting numeric types
+template <typename To, typename From>
+inline To convert(const From& x) {
     std::ostringstream str_representation;
     str_representation << std::setprecision(HP_PRECISION) << x;
-    return hpscalar(str_representation.str());
+    std::istringstream is(str_representation.str());
+    return To(is.str());
 }
 
 #endif

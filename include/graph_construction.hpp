@@ -105,8 +105,8 @@ inline std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& sourc
     auto d1 = Vector{source.source(), target.target()}
         .transform(Transformation(
                     CGAL::ROTATION, 
-                    boost::multiprecision::sin(theta_max), 
-                    boost::multiprecision::cos(theta_max)
+                    convert<fscalar>(boost::multiprecision::sin(theta_max)), 
+                    convert<fscalar>(boost::multiprecision::cos(theta_max))
                     ));
     auto d2 = Vector{source.target(), target.source()}
         .transform(Transformation(
@@ -118,7 +118,7 @@ inline std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& sourc
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
     if (d1.squared_length() == 0 || d2.squared_length() == 0) return std::nullopt;
     fscalar cosine = d1 * d2 / (CGAL::sqrt(d1.squared_length()) * CGAL::sqrt(d2.squared_length()));
-    hpscalar angle = boost::multiprecision::acos(to_hpscalar(cosine));
+    hpscalar angle = boost::multiprecision::acos(convert<hpscalar>(cosine));
     if (angle > CGAL_PI) return std::nullopt;
 
     // Compute p1 and p2 and check target membership
@@ -136,8 +136,8 @@ inline std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& sourc
     // Sort in ascending order for clockwise ordering
     boost::container::small_vector<Point, 4> quad{source.source(), source.target(), *p1, *p2};
     std::sort(quad.begin(), quad.end(), [](const Point& a, const Point& b) {
-        hpscalar angle_a = boost::multiprecision::atan2(to_hpscalar(a.y()), to_hpscalar(a.x()));
-        hpscalar angle_b = boost::multiprecision::atan2(to_hpscalar(b.y()), to_hpscalar(b.x()));
+        hpscalar angle_a = boost::multiprecision::atan2(convert<hpscalar>(a.y()), convert<hpscalar>(a.x()));
+        hpscalar angle_b = boost::multiprecision::atan2(convert<hpscalar>(b.y()), convert<hpscalar>(b.x()));
         return angle_a < angle_b;
     });
     Polygon quadrilateral(quad.begin(), quad.end());
@@ -174,7 +174,7 @@ inline Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fs
 
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
-            auto maybe_edge = hasEdge(w, node.segment, other_node.segment, to_hpscalar(theta_max), tree);
+            auto maybe_edge = hasEdge(w, node.segment, other_node.segment, convert<hpscalar>(theta_max), tree);
             if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value());
         }
     }
