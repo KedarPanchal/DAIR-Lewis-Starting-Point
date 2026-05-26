@@ -21,7 +21,7 @@ if (POLICY CMP0167)
 endif()
 
 # Find dependencies
-find_package(Qt6 REQUIRES COMPONENTS Widgets OpenGL)
+find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGL)
 find_package(CGAL REQUIRED COMPONENTS Qt6)
 find_package(Boost REQUIRED)
 find_package(MPFR REQUIRED)
@@ -31,7 +31,7 @@ add_executable(robot_start_position src/robot_start_position.cpp)
 
 # Link libraries and include headers
 target_include_directories(robot_start_position PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(robot_start_position PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 BOOST::boost ${MPFR_LIBRARIES})
+target_link_libraries(robot_start_position PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 Boost::boost ${MPFR_LIBRARIES})
 
 # Define preprocessor macros
 target_compile_definitions(robot_start_position PRIVATE CGAL_USE_BASIC_VIEWER)
