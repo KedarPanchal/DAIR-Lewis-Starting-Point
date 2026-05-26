@@ -1,9 +1,14 @@
 #ifndef GRAPH_CONSTRUCTION_HPP
 #define GRAPH_CONSTRUCTION_HPP
 
+#include <vector>
 #include <list>
 #include <unordered_map>
 #include <optional>
+
+#include <CGAL/squared_distance_2.h>
+
+#include <boost/container/small_vector.hpp>
 
 #include "cgal_types.hpp"
 
@@ -72,17 +77,65 @@ inline void addLayer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) 
     }
 }
 
-// Helper function for intersection from a raycast
+// shootRay algorithm for checking safe actions
+inline std::optional<Point> shootRay(const HoledPolygon& w, const Point& source, const Vector& direction) {
+    // Construct an AABB tree for raycast queries
+    std::vector<Segment> segments;
+    for (const auto& edge : w.outer_boundary().edges()) segments.push_back(edge);
+    for (const auto hole : w.holes()) {
+        for (const auto& edge : hole.edges()) segments.push_back(edge);
+    }
+
+    AABBTree tree(segments.begin(), segments.end());
+    tree.build();
+
+    // Find all intersections of the ray with the polygon boundary
+    Ray ray(source, direction);
+    std::vector<std::optional<AABBTree::Intersection_and_primitive_id<Ray>::Type>> intersections;
+    tree.all_intersections(ray, std::back_inserter(intersections));
+
+    // Return the point closest to the source (but not equal to the source)
+    Point closest = source;
+    for (const auto& intersection : intersections) {
+        if (const Point* ipoint = std::get_if<Point>(&(intersection->first))) if (
+            closest == source ||
+            *ipoint != source && 
+            CGAL::squared_distance(source, *ipoint) < CGAL::squared_distance(source, closest)
+            ) closest = *ipoint;
+    }
+    if (closest == source) return std::nullopt;
+    else return closest;
+}
 
 // HasEdge algorithm from Lewis's doctoral dissertation (Algorithm 4)
 inline std::optional<fscalar> hasEdge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max) {
-    auto d1 = Vector{source.source(), target.target()}.transform(Transformation(CGAL::ROTATION, boost::multiprecision::sin(theta_max), boost::multiprecision::cos(theta_max)));
-    auto d2 = Vector{source.target(), target.source()}.transform(Transformation(CGAL::ROTATION, boost::multiprecision::sin(-theta_max), boost::multiprecision::cos(-theta_max)));
-    
+    auto d1 = Vector{source.source(), target.target()}
+        .transform(Transformation(
+                    CGAL::ROTATION, 
+                    boost::multiprecision::sin(theta_max), 
+                    boost::multiprecision::cos(theta_max)
+                    ));
+    auto d2 = Vector{source.target(), target.source()}
+        .transform(Transformation(
+                    CGAL::ROTATION,
+                    boost::multiprecision::sin(-theta_max),
+                    boost::multiprecision::cos(-theta_max)
+                    ));
+    // Compute dot product-based angle since CGAL doesn't expose a function for computing angles between vectors 
     fscalar angle = d1 * d2 / (CGAL::sqrt(d1.squared_length()) * CGAL::sqrt(d2.squared_length()));
     if (angle > CGAL_PI) return std::nullopt;
 
-    // Compute p1 and p2
+    // Compute p1 and p2 and check target membership
+    std::optional<Point> p1 = shootRay(w, source.source(), Vector{source.source(), target.target()});
+    std::optional<Point> p2 = shootRay(w, source.target(), Vector{source.target(), target.source()});
+    if (
+        !p1.has_value() ||
+        !p2.has_value() ||
+        !target.has_on(*p1) ||
+        !target.has_on(*p2)
+        ) return std::nullopt;
+
+    // Create a quadrilateral with source.source(), source.target(), p1, and p2
 }
 
 #endif
