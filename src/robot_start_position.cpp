@@ -32,14 +32,15 @@ int main() {
     }
 
     // Read theta_max from standard input
-    std::variant<fscalar, std::string> maybe_theta_max = read_theta_max(std::cin);
-    if (std::holds_alternative<std::string>(maybe_theta_max)) {
-        std::cerr << "Error: Invalid theta_max: " << std::get<std::string>(maybe_theta_max) << std::endl;
+    std::variant<std::pair<fscalar, fscalar>, std::string> maybe_robot_parameters = read_robot_parameters(std::cin);
+    if (std::holds_alternative<std::string>(maybe_robot_parameters)) {
+        std::cerr << "Error: Invalid theta_max: " << std::get<std::string>(maybe_robot_parameters) << std::endl;
         return 1;
     }
-    auto theta_max = std::get<fscalar>(maybe_theta_max);
+    auto theta_max = std::get<std::pair<fscalar, fscalar>>(maybe_robot_parameters).first;
+    auto radius = std::get<std::pair<fscalar, fscalar>>(maybe_robot_parameters).second;
     
     // Construct the graph
-    Graph graph = construct_graph(wall_space, parameters, theta_max);
+    Graph graph = construct_graph(wall_space, parameters, theta_max, radius);
 }
 

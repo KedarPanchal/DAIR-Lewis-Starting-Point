@@ -4,6 +4,7 @@
 #include <list>
 #include <unordered_map>
 #include <optional>
+#include <tuple>
 
 #include <CGAL/squared_distance_2.h>
 
@@ -32,7 +33,7 @@ namespace std {
 }
 
 // Adjacency list representation of the graph
-using Graph = std::unordered_map<Node, std::list<std::pair<Node, Vector>>>;
+using Graph = std::unordered_map<Node, std::list<std::tuple<Node, Vector, PolygonSet>>>;
 
 void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max);
 
@@ -42,6 +43,6 @@ std::optional<Point> shootRay(const HoledPolygon& w, const Point& source, const 
 
 std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max, const AABBTree& tree);
 
-Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max);
+Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius);
 
 #endif

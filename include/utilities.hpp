@@ -14,6 +14,6 @@ std::variant<HoledPolygon, std::string> read_polygon(std::istream& in);
 
 std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream& in);
 
-std::variant<fscalar, std::string> read_theta_max(std::istream& in);
+std::variant<std::pair<fscalar, fscalar>, std::string> read_robot_parameters(std::istream& in);
 
 #endif

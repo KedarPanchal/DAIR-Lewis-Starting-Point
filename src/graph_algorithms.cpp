@@ -1,6 +1,7 @@
 #include "graph_algorithms.hpp"
 
 #include <vector>
+#include <algorithm>
 
 #include "graph_construction.hpp"
 
@@ -10,7 +11,7 @@ std::vector<std::vector<int>> floyd_warshall(const Graph& g) {
     std::vector<std::vector<int>> dist(g.size(), std::vector<int>(g.size(), INF));
     for (const auto& [u, neighbors] : g)  {
         dist[u][u] = 0;
-        for (const auto& [v, _] : neighbors) dist[u][v] = 1;
+        for (const auto& [v, vec, region] : neighbors) dist[u][v] = 1;
     }
 
     // Actually run the algorithm
@@ -27,4 +28,20 @@ std::vector<std::vector<int>> floyd_warshall(const Graph& g) {
     }
 
     return dist;
+}
+
+// ComputeCoveredEdges algorithm from Lewis's doctoral dissertation (Algorithm 5)
+std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& source, PolygonSet& CCR, const Graph& g) {
+    std::vector<std::vector<int>> p = floyd_warshall(g);
+    std::unordered_set<std::pair<Node, Node>> covered;
+
+    // For all edges of G
+    for (const auto& [u, neighbors] : g) {
+        for (const auto& v : neighbors) {
+            int s = p[source][u];
+            int t = p[std::get<0>(v)][source];
+        }
+    }
+
+    return covered;
 }
