@@ -37,7 +37,7 @@ using Graph = std::unordered_map<Node, std::list<std::pair<Node, Vector>>>;
 
 // Adds layers around the boundary of a single polygon
 inline void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
-    size_t node_id = 0;
+    static size_t node_id = 0;
 
     for (auto eit = w.edges_begin(); eit != w.edges_end(); ++eit) {
         fscalar length = CGAL::sqrt(eit->squared_length());
