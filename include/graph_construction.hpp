@@ -18,6 +18,7 @@ struct Node {
     const Segment segment;
 
     Node(size_t id, const Segment& segment) : id{id}, segment{segment} {}
+    bool operator==(const Node& other) const { return id == other.id; }
     operator size_t() const { return id; }
 };
 
