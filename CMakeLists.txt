@@ -27,7 +27,12 @@ find_package(Boost REQUIRED)
 find_package(MPFR REQUIRED)
 
 # Add the executable target
-add_executable(robot_start_position src/robot_start_position.cpp)
+add_executable(robot_start_position 
+    src/robot_start_position.cpp 
+    src/utilities.cpp 
+    src/graph_construction.cpp 
+    src/graph_algorithms.cpp
+)
 
 # Link libraries and include headers
 target_include_directories(robot_start_position PRIVATE ${PROJECT_SOURCE_DIR}/include)
