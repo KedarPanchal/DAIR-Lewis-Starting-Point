@@ -80,7 +80,7 @@ PolygonSet buildStadium(const Point& source, const Point& target, const fscalar&
     return stadium;
 }
 
-PolygonSet computeCoverage(const Segment& source, const Segment& target, const Vector& direction, const fscalar& radius) {
+PolygonSet computeCoverage(const Segment& source, const Segment& target, const fscalar& radius) {
     auto stadium1 = buildStadium(source.source(), target.target(), radius);
     auto stadium2 = buildStadium(source.target(), target.source(), radius);
     stadium1.join(stadium2);
@@ -223,7 +223,7 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
             auto maybe_edge = hasEdge(w, node.segment(), other_node.segment(), convert<hpscalar>(theta_max), tree);
-            if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value(), computeCoverage(node.segment(), other_node.segment(), maybe_edge.value(), radius));
+            if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value(), computeCoverage(node.segment(), other_node.segment(), radius));
         }
     }
 
