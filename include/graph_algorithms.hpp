@@ -11,7 +11,7 @@
 
 std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g);
 
-PolygonSet computeCoverage(const Node& source, const Node& target, const Vector& direction, const hpscalar& theta_max);
+PolygonSet computeCoverage(const Node& source, const Node& target, const Graph& g);
 
 std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& source, PolygonSet& CCR, const Graph& g);
 
