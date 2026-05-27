@@ -164,8 +164,8 @@ std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, cons
     auto d2 = Vector{source.target(), target.source()}
         .transform(Transformation(
                     CGAL::ROTATION,
-                    boost::multiprecision::sin(-theta_max),
-                    boost::multiprecision::cos(-theta_max)
+                    convert<fscalar>(boost::multiprecision::sin(-theta_max)),
+                    convert<fscalar>(boost::multiprecision::cos(-theta_max))
                     ));
     // Compute dot product-based angle since CGAL doesn't expose a function for computing angles between vectors 
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
