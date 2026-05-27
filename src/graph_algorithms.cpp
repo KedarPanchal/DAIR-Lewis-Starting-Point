@@ -7,17 +7,15 @@
 #include "graph_construction.hpp"
 
 // -- HELPER FUNCTIONS --------------------------------------------------------
-namespace std {
-    template <>
-    struct hash<std::pair<Node, Node>> {
-        size_t operator()(const std::pair<Node, Node>& p) const {
-            size_t seed = 0;
-            boost::hash_combine(seed, p.first);
-            boost::hash_combine(seed, p.second);
-            return seed;
-        }
-    };
-}
+struct pair_hash {
+    template <typename T1, typename T2>
+    size_t operator()(const std::pair<T1, T2>& p) const {
+        size_t seed = 0;
+        boost::hash_combine(seed, p.first);
+        boost::hash_combine(seed, p.second);
+        return seed;
+    }
+};
 
 PolygonSet computeCoverage(const Node& source, const Node& target, const Graph& g) {
     for (const auto& [neighbor, _, ccr] : g.at(source)) {
@@ -66,9 +64,9 @@ std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g) {
 }
 
 // ComputeCoveredEdges algorithm from Lewis's doctoral dissertation (Algorithm 5)
-std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& source, PolygonSet& ccr, const Graph& g) {
+std::unordered_set<std::pair<Node, Node>, pair_hash> computeCoverageEdges(const Node& source, PolygonSet& ccr, const Graph& g) {
     std::vector<std::vector<std::optional<Node>>> p = floyd_warshall(g);
-    std::unordered_set<std::pair<Node, Node>> covered;
+    std::unordered_set<std::pair<Node, Node>, pair_hash> covered;
 
     // For all edges of G
     for (const auto& [u, neighbors] : g) {
