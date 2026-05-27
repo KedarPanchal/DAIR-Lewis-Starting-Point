@@ -24,6 +24,7 @@ public:
     Segment segment() const { return seg; }
 
     bool operator==(const Node& other) const { return id == other.id; }
+    bool operator!=(const Node& other) const { return id != other.id; }
     operator size_t() const { return id; }
 };
 

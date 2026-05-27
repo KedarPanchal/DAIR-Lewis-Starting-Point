@@ -19,6 +19,16 @@ namespace std {
     };
 }
 
+PolygonSet computeCoverage(const Node& source, const Node& target, const Graph& g) {
+    for (const auto& [neighbor, _, ccr] : g.at(source)) {
+        if (neighbor == target) return ccr;
+    }
+
+    return PolygonSet();
+}
+
+// -- GRAPH ALGORITHMS --------------------------------------------------------
+
 // Performs the Floyd-Warshall algorithm and returns the predecessor matrix
 std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g) {
     // Create the distance matrix initialized with INF and set the diagonal to 0
@@ -56,7 +66,7 @@ std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g) {
 }
 
 // ComputeCoveredEdges algorithm from Lewis's doctoral dissertation (Algorithm 5)
-std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& source, PolygonSet& CCR, const Graph& g) {
+std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& source, PolygonSet& ccr, const Graph& g) {
     std::vector<std::vector<std::optional<Node>>> p = floyd_warshall(g);
     std::unordered_set<std::pair<Node, Node>> covered;
 
@@ -68,8 +78,23 @@ std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& sourc
             PolygonSet ccr_prime = std::get<2>(v);
 
             PolygonSet difference = ccr_prime;
-            difference.difference(CCR);
+            difference.difference(ccr);
             if (s.has_value() && t.has_value() && !difference.is_empty()) {
+                Node end = u;
+                while (end != *s) {
+                    Node penultimate = *p[source][end];
+                    ccr.join(computeCoverage(penultimate, end, g));
+                    covered.emplace(penultimate, end);
+                    end = penultimate;
+                }
+                ccr.join(ccr_prime);
+                end = source;
+                while (end != *t) {
+                    Node penultimate = *p[end][source];
+                    ccr.join(computeCoverage(end, penultimate, g));
+                    covered.emplace(end, penultimate);
+                    end = penultimate;
+                }
             }
         }
     }
