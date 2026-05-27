@@ -111,7 +111,7 @@ void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
             Node node{node_id++, *eit};
             g[node] = std::list<std::tuple<Node, Vector, PolygonSet>>{};
         } else if (length > l) {
-            // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT (BURST::numeric::fscalar)
+            // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT
             size_t ceiling = static_cast<size_t>(CGAL::to_double((length - l) / o_max)) + 1;
             fscalar o = (length - l) / ceiling;
             
