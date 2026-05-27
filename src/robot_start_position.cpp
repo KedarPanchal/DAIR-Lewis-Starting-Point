@@ -34,7 +34,7 @@ int main() {
     // Read theta_max from standard input
     std::variant<std::pair<fscalar, fscalar>, std::string> maybe_robot_parameters = read_robot_parameters(std::cin);
     if (std::holds_alternative<std::string>(maybe_robot_parameters)) {
-        std::cerr << "Error: Invalid theta_max: " << std::get<std::string>(maybe_robot_parameters) << std::endl;
+        std::cerr << "Error: Invalid robot parameters: " << std::get<std::string>(maybe_robot_parameters) << std::endl;
         return 1;
     }
     auto theta_max = std::get<std::pair<fscalar, fscalar>>(maybe_robot_parameters).first;
