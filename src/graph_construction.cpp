@@ -80,6 +80,7 @@ PolygonSet buildStadium(const Point& source, const Point& target, const fscalar&
     return stadium;
 }
 
+// TODO: This is really slow to the point of tears, make it faster
 PolygonSet computeCoverage(const Segment& source, const Segment& target, const fscalar& radius) {
     auto stadium1 = buildStadium(source.source(), target.target(), radius);
     auto stadium2 = buildStadium(source.target(), target.source(), radius);
