@@ -20,6 +20,12 @@ if (POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
+if (MSVC)
+    set(ASAN_FLAG "/fsanitize=address")
+else()
+    set(ASAN_FLAG "-fsanitize=address")
+endif()
+
 # Find dependencies
 find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGL)
 find_package(CGAL REQUIRED COMPONENTS Qt6)
@@ -38,6 +44,7 @@ add_executable(robot_start_position
 target_include_directories(robot_start_position PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(robot_start_position PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 Boost::boost ${MPFR_LIBRARIES})
 
-# Define preprocessor macros
+# Define preprocessor macros and compile options
 target_compile_definitions(robot_start_position PRIVATE CGAL_USE_BASIC_VIEWER)
-
+target_compile_options(robot_start_position PRIVATE -g ${ASAN_FLAG})
+target_link_options(robot_start_position PRIVATE ${ASAN_FLAG})
