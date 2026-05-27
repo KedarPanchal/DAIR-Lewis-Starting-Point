@@ -17,6 +17,11 @@
 
 // -- HELPER FUNCTIONS --------------------------------------------------------
 
+// Hash value function for boost::hash_combine
+size_t hash_value(const Node& node) {
+    return std::hash<size_t>()(node.id);
+}
+
 // Sort points in counterclockwise order
 template <typename Container>
 void sort_counterclockwise(Container& points) {

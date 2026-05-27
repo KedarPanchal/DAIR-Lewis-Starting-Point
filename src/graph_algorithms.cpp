@@ -3,8 +3,24 @@
 #include <vector>
 #include <algorithm>
 
+#include <boost/container_hash/hash.hpp>
+
 #include "graph_construction.hpp"
 
+// -- HELPER FUNCTIONS --------------------------------------------------------
+namespace std {
+    template <>
+    struct hash<std::pair<Node, Node>> {
+        size_t operator()(const std::pair<Node, Node>& p) const {
+            size_t seed = 0;
+            boost::hash_combine(seed, p.first);
+            boost::hash_combine(seed, p.second);
+            return seed;
+        }
+    };
+}
+
+// TODO: Update to actually contain the path
 std::vector<std::vector<int>> floyd_warshall(const Graph& g) {
     // Create the distance matrix initialized with INF and set the diagonal to 0
     // Also set neighboring vertices to 1
@@ -31,7 +47,6 @@ std::vector<std::vector<int>> floyd_warshall(const Graph& g) {
 }
 
 // ComputeCoveredEdges algorithm from Lewis's doctoral dissertation (Algorithm 5)
-// TODO: Define a hash function for std::pair<Node, Node>
 std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& source, PolygonSet& CCR, const Graph& g) {
     std::vector<std::vector<int>> p = floyd_warshall(g);
     std::unordered_set<std::pair<Node, Node>> covered;
@@ -42,6 +57,11 @@ std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& sourc
             int s = p[source][u];
             int t = p[std::get<0>(v)][source];
             PolygonSet ccr_prime = std::get<2>(v);
+
+            PolygonSet difference = ccr_prime;
+            difference.difference(CCR);
+            if (s != INF && t != INF && !difference.is_empty()) {
+            }
         }
     }
 

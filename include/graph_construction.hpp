@@ -32,6 +32,8 @@ namespace std {
     };
 }
 
+size_t hash_value(const Node& node);
+
 // Adjacency list representation of the graph
 using Graph = std::unordered_map<Node, std::list<std::tuple<Node, Vector, PolygonSet>>>;
 
