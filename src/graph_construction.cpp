@@ -80,7 +80,6 @@ PolygonSet buildStadium(const Point& source, const Point& target, const fscalar&
     return stadium;
 }
 
-// TODO: This is really slow to the point of tears, make it faster
 PolygonSet computeCoverage(const Segment& source, const Segment& target, const fscalar& radius) {
     auto stadium1 = buildStadium(source.source(), target.target(), radius);
     auto stadium2 = buildStadium(source.target(), target.source(), radius);
@@ -88,6 +87,16 @@ PolygonSet computeCoverage(const Segment& source, const Segment& target, const f
 
     return stadium1;
 }
+
+/**
+ * TODO: Implement better stadium building:
+ * 1. Identify the circle centers
+ * 2. Identify the 4 points needed to construct the rectangle
+ * 3. Sort the 4 points in counterclockwise order
+ * 4. Compute edges pairwise, if both points are a source or target, then construct an arc instead of a line segment
+ *   a. The arc should be constructed from the first point in the collection to the next in counterclockwise order
+ * This avoids the multple union operations which are insanely slow
+ */
 
 // -- GRAPH CONSTRUCTION ALGORITHM --------------------------------------------
 
