@@ -1,18 +1,19 @@
 #ifndef CGAL_TYPES_HPP
 #define CGAL_TYPES_HPP
 
-#include <vector>
 #include <sstream>
 #include <iomanip>
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 #include <CGAL/Gps_segment_traits_2.h>
+#include <CGAL/Gps_circle_segment_traits_2.h>
 
 #include <CGAL/Point_2.h>
 #include <CGAL/Segment_2.h>
 #include <CGAL/Vector_2.h>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/General_polygon_set_2.h>
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits_2.h>
 #include <CGAL/AABB_segment_primitive_2.h>
@@ -23,17 +24,20 @@
 
 // Geometric types
 using Kernel = CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
-using Traits = CGAL::Gps_segment_traits_2<Kernel>;
+using LinearTraits = CGAL::Gps_segment_traits_2<Kernel>;
+using CurvedTraits = CGAL::Gps_circle_segment_traits_2<Kernel>;
 
 using Point = CGAL::Point_2<Kernel>;
 using Segment = CGAL::Segment_2<Kernel>;
 using Ray = CGAL::Ray_2<Kernel>;
 using Vector = CGAL::Vector_2<Kernel>;
-using Polygon = CGAL::Polygon_2<Traits>;
-using HoledPolygon = CGAL::Polygon_with_holes_2<Traits>;
+using Polygon = CGAL::Polygon_2<LinearTraits>;
+using CurvedPolygon = CurvedTraits::General_polygon_2;
+using HoledPolygon = CGAL::Polygon_with_holes_2<LinearTraits>;
 using Transformation = CGAL::Aff_transformation_2<Kernel>;
 
 // Complex types
+using PolygonSet = CGAL::General_polygon_set_2<CurvedTraits>;
 using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits_2<Kernel, CGAL::AABB_segment_primitive_2<Kernel, std::vector<Segment>::const_iterator>>>;
 
 // Numeric types
