@@ -19,7 +19,7 @@
 
 // Hash value function for boost::hash_combine
 size_t hash_value(const Node& node) {
-    return std::hash<size_t>()(node.id);
+    return std::hash<size_t>()(node.ID());
 }
 
 // Sort points in counterclockwise order
@@ -221,8 +221,8 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
 
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
-            auto maybe_edge = hasEdge(w, node.segment, other_node.segment, convert<hpscalar>(theta_max), tree);
-            if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value(), computeCoverage(node.segment, other_node.segment, maybe_edge.value(), radius));
+            auto maybe_edge = hasEdge(w, node.segment(), other_node.segment(), convert<hpscalar>(theta_max), tree);
+            if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value(), computeCoverage(node.segment(), other_node.segment(), maybe_edge.value(), radius));
         }
     }
 

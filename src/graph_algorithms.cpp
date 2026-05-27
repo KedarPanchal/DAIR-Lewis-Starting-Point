@@ -1,7 +1,6 @@
 #include "graph_algorithms.hpp"
 
 #include <vector>
-#include <algorithm>
 
 #include <boost/container_hash/hash.hpp>
 
@@ -20,14 +19,21 @@ namespace std {
     };
 }
 
-// TODO: Update to actually contain the path
-std::vector<std::vector<int>> floyd_warshall(const Graph& g) {
+// Performs the Floyd-Warshall algorithm and returns the predecessor matrix
+std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g) {
     // Create the distance matrix initialized with INF and set the diagonal to 0
     // Also set neighboring vertices to 1
     std::vector<std::vector<int>> dist(g.size(), std::vector<int>(g.size(), INF));
+    // Initialize prev matrix with nullopt
+    std::vector<std::vector<std::optional<Node>>> prev(g.size(), std::vector<std::optional<Node>>(g.size(), std::nullopt));
+
     for (const auto& [u, neighbors] : g)  {
         dist[u][u] = 0;
-        for (const auto& [v, vec, region] : neighbors) dist[u][v] = 1;
+        prev[u][u] = u;
+        for (const auto& [v, vec, region] : neighbors) {
+            dist[u][v] = 1;
+            prev[u][v] = u;
+        }
     }
 
     // Actually run the algorithm
@@ -38,29 +44,32 @@ std::vector<std::vector<int>> floyd_warshall(const Graph& g) {
                 if (j == k || j == i) continue;
                 // Skip if either path is currently unreachable
                 if (dist[i][k] == INF || dist[k][j] == INF) continue;
-                dist[i][j] = std::min(dist[i][j], dist[i][k] + dist[k][j]);
+                if (dist[i][j] > dist[i][k] + dist[k][j]) {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                    prev[i][j] = prev[k][j];
+                }
             }
         }
     }
 
-    return dist;
+    return prev;
 }
 
 // ComputeCoveredEdges algorithm from Lewis's doctoral dissertation (Algorithm 5)
 std::unordered_set<std::pair<Node, Node>> computeCoverageEdges(const Node& source, PolygonSet& CCR, const Graph& g) {
-    std::vector<std::vector<int>> p = floyd_warshall(g);
+    std::vector<std::vector<std::optional<Node>>> p = floyd_warshall(g);
     std::unordered_set<std::pair<Node, Node>> covered;
 
     // For all edges of G
     for (const auto& [u, neighbors] : g) {
         for (const auto& v : neighbors) {
-            int s = p[source][u];
-            int t = p[std::get<0>(v)][source];
+            std::optional<Node> s = p[source][u];
+            std::optional<Node> t = p[std::get<0>(v)][source];
             PolygonSet ccr_prime = std::get<2>(v);
 
             PolygonSet difference = ccr_prime;
             difference.difference(CCR);
-            if (s != INF && t != INF && !difference.is_empty()) {
+            if (s.has_value() && t.has_value() && !difference.is_empty()) {
             }
         }
     }

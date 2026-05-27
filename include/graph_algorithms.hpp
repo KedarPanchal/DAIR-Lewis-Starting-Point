@@ -9,7 +9,7 @@
 
 #define INF -1
 
-std::vector<std::vector<int>> floyd_warshall(const Graph& g);
+std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g);
 
 PolygonSet computeCoverage(const Node& source, const Node& target, const Vector& direction, const hpscalar& theta_max);
 

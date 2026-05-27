@@ -13,11 +13,16 @@
 #include "cgal_types.hpp"
 
 // Graph node, with numeric ID for Johnson's algorithm
-struct Node {
-    const size_t id;
-    const Segment segment;
+class Node {
+    size_t id;
+    Segment seg;
 
-    Node(size_t id, const Segment& segment) : id{id}, segment{segment} {}
+public:
+    Node(size_t id, const Segment& segment) : id{id}, seg{segment} {}
+
+    size_t ID() const { return id; }
+    Segment segment() const { return seg; }
+
     bool operator==(const Node& other) const { return id == other.id; }
     operator size_t() const { return id; }
 };
@@ -27,7 +32,7 @@ namespace std {
     template<>
     struct hash<Node> {
         size_t operator()(const Node& node) const {
-            return hash<size_t>()(node.id);
+            return hash<size_t>()(node.ID());
         }
     };
 }
