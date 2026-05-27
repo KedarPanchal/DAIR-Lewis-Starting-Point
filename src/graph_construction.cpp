@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <optional>
 #include <algorithm>
+#include <numeric>
 #include <iterator>
 #include <tuple>
 
