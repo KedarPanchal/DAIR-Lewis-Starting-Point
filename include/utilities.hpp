@@ -2,6 +2,7 @@
 #define UTILITIES_HPP
 
 #include <variant>
+#include <istream>
 #include <list>
 #include <string>
 #include <utility>

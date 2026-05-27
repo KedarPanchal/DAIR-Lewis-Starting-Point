@@ -4,6 +4,7 @@
 #include <variant>
 #include <list>
 #include <string>
+#include <istream>
 #include <sstream>
 #include <utility>
 
