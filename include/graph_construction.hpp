@@ -20,12 +20,12 @@ class Node {
 public:
     Node(size_t id, const Segment& segment) : id{id}, seg{segment} {}
 
-    size_t ID() const { return id; }
-    Segment segment() const { return seg; }
+    size_t ID() const noexcept { return id; }
+    const Segment& segment() const noexcept { return seg; }
 
-    bool operator==(const Node& other) const { return id == other.id; }
-    bool operator!=(const Node& other) const { return id != other.id; }
-    operator size_t() const { return id; }
+    bool operator==(const Node& other) const noexcept { return id == other.id; }
+    bool operator!=(const Node& other) const noexcept { return id != other.id; }
+    operator size_t() const noexcept { return id; }
 };
 
 // Hash specialization that just uses the numeric ID of the node
