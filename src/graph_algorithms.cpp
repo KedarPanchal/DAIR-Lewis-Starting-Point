@@ -54,7 +54,7 @@ std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g) {
                 if (j == k || j == i) continue;
                 // Skip if either path is currently unreachable
                 if (dist[i][k] == INF || dist[k][j] == INF) continue;
-                if (dist[i][j] > dist[i][k] + dist[k][j]) {
+                if (dist[i][j] == INF || dist[i][j] > dist[i][k] + dist[k][j]) {
                     dist[i][j] = dist[i][k] + dist[k][j];
                     prev[i][j] = prev[k][j];
                 }
