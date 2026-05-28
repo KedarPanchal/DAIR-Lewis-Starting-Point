@@ -80,14 +80,6 @@ PolygonSet buildStadium(const Point& source, const Point& target, const fscalar&
     return stadium;
 }
 
-PolygonSet computeCoverage(const Segment& source, const Segment& target, const fscalar& radius) {
-    auto stadium1 = buildStadium(source.source(), target.target(), radius);
-    auto stadium2 = buildStadium(source.target(), target.source(), radius);
-    stadium1.join(stadium2);
-
-    return stadium1;
-}
-
 /**
  * TODO: Implement better stadium building:
  * 1. Identify the circle centers
@@ -97,6 +89,14 @@ PolygonSet computeCoverage(const Segment& source, const Segment& target, const f
  *   a. The arc should be constructed from the first point in the collection to the next in counterclockwise order
  * This avoids the multple union operations which are insanely slow
  */
+
+PolygonSet computeCoverage(const Segment& source, const Segment& target, const fscalar& radius) {
+    auto stadium1 = buildStadium(source.source(), target.target(), radius);
+    auto stadium2 = buildStadium(source.target(), target.source(), radius);
+    stadium1.join(stadium2);
+
+    return stadium1;
+}
 
 // -- GRAPH CONSTRUCTION ALGORITHM --------------------------------------------
 
