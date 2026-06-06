@@ -38,48 +38,6 @@ void sort_counterclockwise(Container& points) {
     });
 }
 
-// Helper functions for computing CCR
-CurvedPolygon buildCircle(const Point& center, const fscalar& radius) {
-    CGAL::Circle_2<Kernel> circle(center, radius * radius);
-    boost::container::small_vector<CurvedTraits::X_monotone_curve_2, 2> semicircles{
-        CurvedTraits::X_monotone_curve_2(circle, CurvedTraits::Point_2(center.x() - radius, center.y()), CurvedTraits::Point_2(center.x() + radius, center.y()), CGAL::COUNTERCLOCKWISE),
-        CurvedTraits::X_monotone_curve_2(circle, CurvedTraits::Point_2(center.x() + radius, center.y()), CurvedTraits::Point_2(center.x() - radius, center.y()), CGAL::COUNTERCLOCKWISE),
-    };
-
-    return CurvedPolygon(semicircles.begin(), semicircles.end());
-}
-
-PolygonSet buildStadium(const Point& source, const Point& target, const fscalar& radius) {
-    // The circle centers are radius distance along the vector from source to target, in both directions
-    Vector direction = Vector{source, target};
-    direction = direction / CGAL::sqrt(direction.squared_length()); // Normalize
-    Point source_center = source + direction * radius;
-    Point target_center = target - direction * radius;
-    
-    // Add the circles to the polygon set
-    PolygonSet stadium{buildCircle(source_center, radius)};
-    stadium.join(buildCircle(target_center, radius));
-
-    // Construct a rectangle between the two circles and add it to the polygon set
-    boost::container::small_vector<Point, 4> rectangle_points{
-        source_center + direction.perpendicular(CGAL::CLOCKWISE) * radius,
-        source_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE) * radius,
-        target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE) * radius,
-        target_center + direction.perpendicular(CGAL::CLOCKWISE) * radius,
-    };
-    sort_counterclockwise(rectangle_points);
-    // Using the points, construct them into edges pairwise
-    boost::container::small_vector<CurvedTraits::X_monotone_curve_2, 4> rectangle_edges;
-    for (size_t i = 0; i < rectangle_points.size(); ++i) {
-        size_t next = (i + 1) % rectangle_points.size();
-        rectangle_edges.emplace_back(rectangle_points[i], rectangle_points[next]);
-    }
-    CurvedPolygon rectangle(rectangle_edges.begin(), rectangle_edges.end());
-    stadium.join(rectangle);
-
-    return stadium;
-}
-
 /**
  * TODO: Implement better stadium building:
  * 1. Identify the circle centers
@@ -90,12 +48,54 @@ PolygonSet buildStadium(const Point& source, const Point& target, const fscalar&
  * This avoids the multple union operations which are insanely slow
  */
 
+CurvedPolygon buildStadium(const Point& source, const Point& target, const fscalar& radius) {
+    // The circle centers are radius distance along the vector from source to target, in both directions
+    Vector direction = Vector{source, target};
+    direction = direction / CGAL::sqrt(direction.squared_length()); // Normalize
+    Point source_center = source + direction * radius;
+    Point target_center = target - direction * radius;
+    CGAL::Circle_2<Kernel> source_circle(source_center, radius * radius);
+    CGAL::Circle_2<Kernel> target_circle(target_center, radius * radius);
+
+    // Construct the 4 points needed to construct the rectangle
+    Point source1 = source_center + direction.perpendicular(CGAL::CLOCKWISE) * radius;
+    Point source2 = source_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE) * radius;
+    Point target1 = target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE) * radius;
+    Point target2 = target_center + direction.perpendicular(CGAL::CLOCKWISE) * radius;
+
+    // Place them all into a vector and sort them in counterclockwise order
+    boost::container::small_vector<Point, 4> rectangle_points{source1, source2, target1, target2};
+    sort_counterclockwise(rectangle_points);
+
+    // Using the points, construct them into edges pairwise
+    boost::container::small_vector<CurvedTraits::X_monotone_curve_2, 4> stadium_edges;
+    // If both points are a source or target, construct an arc in counterclockwise order, otherwise construct a line segment
+    for (size_t i = 0; i < 4; ++i) {
+        size_t next = (i + 1)  % 4;
+        if (
+            (rectangle_points[i] == source1 || rectangle_points[i] == source2) &&
+            (rectangle_points[next] == source1 || rectangle_points[next] == source2) ||
+            (rectangle_points[i] == target1 || rectangle_points[i] == target2) &&
+            (rectangle_points[next] == target1 || rectangle_points[next] == target2)
+            ) {
+            CurvedTraits::Point_2 source_point(rectangle_points[i].x(), rectangle_points[i].y());
+            CurvedTraits::Point_2 target_point(rectangle_points[next].x(), rectangle_points[next].y());
+            stadium_edges.emplace_back(CurvedTraits::X_monotone_curve_2(source_circle, source_point, target_point, CGAL::COUNTERCLOCKWISE));
+        } else {
+            stadium_edges.emplace_back(CurvedTraits::X_monotone_curve_2(rectangle_points[i], rectangle_points[next]));
+        }
+    }
+
+    return CurvedPolygon(stadium_edges.begin(), stadium_edges.end());
+}
+
 PolygonSet computeCoverage(const Segment& source, const Segment& target, const fscalar& radius) {
     auto stadium1 = buildStadium(source.source(), target.target(), radius);
     auto stadium2 = buildStadium(source.target(), target.source(), radius);
-    stadium1.join(stadium2);
-
-    return stadium1;
+    
+    PolygonSet coverage{std::move(stadium1)};
+    coverage.join(std::move(stadium2));
+    return coverage;
 }
 
 // -- GRAPH CONSTRUCTION ALGORITHM --------------------------------------------
@@ -233,7 +233,10 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
             auto maybe_edge = hasEdge(w, node.segment(), other_node.segment(), convert<hpscalar>(theta_max), tree);
-            if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value(), computeCoverage(node.segment(), other_node.segment(), radius));
+            if (maybe_edge.has_value()) {
+                std::cout << "Building edge from " << node.ID() << " to " << other_node.ID() << std::endl;
+                edges.emplace_back(other_node, maybe_edge.value(), computeCoverage(node.segment(), other_node.segment(), radius));
+            }
         }
     }
 
