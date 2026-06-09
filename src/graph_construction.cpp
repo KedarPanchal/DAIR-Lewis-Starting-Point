@@ -11,6 +11,7 @@
 
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/Circle_2.h>
+#include <CGAL/convex_hull_2.h>
 
 #include <boost/container/small_vector.hpp>
 
@@ -21,21 +22,6 @@
 // Hash value function for boost::hash_combine
 size_t hash_value(const Node& node) {
     return std::hash<size_t>()(node.ID());
-}
-
-// Sort points in counterclockwise order
-template <typename Container>
-void sort_counterclockwise(Container& points) {
-    Point sum = std::accumulate(points.begin(), points.end(), Point(0, 0), [](const Point& acc, const Point& point) {
-        return Point(acc.x() + point.x(), acc.y() + point.y());
-    });
-    Point centroid = Point(sum.x() / points.size(), sum.y() / points.size());
-
-    std::sort(points.begin(), points.end(), [&centroid](const Point& a, const Point& b) {
-        hpscalar angle_a = boost::multiprecision::atan2(convert<hpscalar>(a.y() - centroid.y()), convert<hpscalar>(a.x() - centroid.x()));
-        hpscalar angle_b = boost::multiprecision::atan2(convert<hpscalar>(b.y() - centroid.y()), convert<hpscalar>(b.x() - centroid.x()));
-        return angle_a < angle_b;
-    });
 }
 
 /**
@@ -65,7 +51,8 @@ CurvedPolygon buildStadium(const Point& source, const Point& target, const fscal
 
     // Place them all into a vector and sort them in counterclockwise order
     boost::container::small_vector<Point, 4> rectangle_points{source1, source2, target1, target2};
-    sort_counterclockwise(rectangle_points);
+    boost::container::small_vector<Point, 4> sorted_rectangle_points;
+    CGAL::convex_hull_2(rectangle_points.begin(), rectangle_points.end(), std::back_inserter(sorted_rectangle_points));
 
     // Using the points, construct them into edges pairwise
     boost::container::small_vector<CurvedTraits::X_monotone_curve_2, 4> stadium_edges;
@@ -73,16 +60,21 @@ CurvedPolygon buildStadium(const Point& source, const Point& target, const fscal
     for (size_t i = 0; i < 4; ++i) {
         size_t next = (i + 1)  % 4;
         if (
-            (rectangle_points[i] == source1 || rectangle_points[i] == source2) &&
-            (rectangle_points[next] == source1 || rectangle_points[next] == source2) ||
-            (rectangle_points[i] == target1 || rectangle_points[i] == target2) &&
-            (rectangle_points[next] == target1 || rectangle_points[next] == target2)
+            (sorted_rectangle_points[i] == source1 || sorted_rectangle_points[i] == source2) &&
+            (sorted_rectangle_points[next] == source1 || sorted_rectangle_points[next] == source2)
             ) {
-            CurvedTraits::Point_2 source_point(rectangle_points[i].x(), rectangle_points[i].y());
-            CurvedTraits::Point_2 target_point(rectangle_points[next].x(), rectangle_points[next].y());
+            CurvedTraits::Point_2 source_point(sorted_rectangle_points[i].x(), sorted_rectangle_points[i].y());
+            CurvedTraits::Point_2 target_point(sorted_rectangle_points[next].x(), sorted_rectangle_points[next].y());
             stadium_edges.emplace_back(CurvedTraits::X_monotone_curve_2(source_circle, source_point, target_point, CGAL::COUNTERCLOCKWISE));
+        } else if (
+            (sorted_rectangle_points[i] == target1 || sorted_rectangle_points[i] == target2) &&
+            (sorted_rectangle_points[next] == target1 || sorted_rectangle_points[next] == target2)
+            ) {
+            CurvedTraits::Point_2 source_point(sorted_rectangle_points[i].x(), sorted_rectangle_points[i].y());
+            CurvedTraits::Point_2 target_point(sorted_rectangle_points[next].x(), sorted_rectangle_points[next].y());
+            stadium_edges.emplace_back(CurvedTraits::X_monotone_curve_2(target_circle, source_point, target_point, CGAL::COUNTERCLOCKWISE));
         } else {
-            stadium_edges.emplace_back(CurvedTraits::X_monotone_curve_2(rectangle_points[i], rectangle_points[next]));
+            stadium_edges.emplace_back(CurvedTraits::X_monotone_curve_2(sorted_rectangle_points[i], sorted_rectangle_points[next]));
         }
     }
 
@@ -92,9 +84,13 @@ CurvedPolygon buildStadium(const Point& source, const Point& target, const fscal
 PolygonSet computeCoverage(const Segment& source, const Segment& target, const fscalar& radius) {
     auto stadium1 = buildStadium(source.source(), target.target(), radius);
     auto stadium2 = buildStadium(source.target(), target.source(), radius);
+    std::cout << "Stadium 1: " << stadium1 << std::endl;
+    std::cout << "Stadium 2: " << stadium2 << std::endl;
     
     PolygonSet coverage{std::move(stadium1)};
-    coverage.join(std::move(stadium2));
+    std::cout << "Added stadium 1 to the coverage" << std::endl;
+    coverage.intersection(std::move(stadium2));
+    std::cout << "Intersected stadium 2 with the coverage" << std::endl;
     return coverage;
 }
 
@@ -195,10 +191,11 @@ std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, cons
         ) return std::nullopt;
 
     // Create a quadrilateral with source.source(), source.target(), p1, and p2
-    // and sort it according to angle from the point to the origin.
-    boost::container::small_vector<Point, 4> quad{source.source(), source.target(), *p1, *p2};
-    sort_counterclockwise(quad);
-    Polygon quadrilateral(quad.begin(), quad.end());
+    // and sort it according to angle from the centroid
+    boost::container::small_vector<Point, 4> quad_points{source.source(), source.target(), *p1, *p2};
+    boost::container::small_vector<Point, 4> sorted_quad_points;
+    CGAL::convex_hull_2(quad_points.begin(), quad_points.end(), std::back_inserter(sorted_quad_points));
+    Polygon quadrilateral(sorted_quad_points.begin(), sorted_quad_points.end());
     
     // Check if any vertices of w are contained in the quadrilateral
     for (const auto& vertex : w.outer_boundary().vertices()) {

@@ -9,7 +9,7 @@ project(
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Add CMake prefix path
 if (APPLE)
@@ -45,6 +45,10 @@ target_include_directories(robot_start_position PRIVATE ${PROJECT_SOURCE_DIR}/in
 target_link_libraries(robot_start_position PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 Boost::boost ${MPFR_LIBRARIES})
 
 # Define preprocessor macros and compile options
-target_compile_definitions(robot_start_position PRIVATE CGAL_USE_BASIC_VIEWER)
+target_compile_definitions(robot_start_position PRIVATE 
+    CGAL_USE_BASIC_VIEWER
+    CGAL_CHECK_EXPENSIVE
+    CGAL_CHECK_EXACTNESS
+)
 target_compile_options(robot_start_position PRIVATE -g ${ASAN_FLAG})
 target_link_options(robot_start_position PRIVATE ${ASAN_FLAG})
