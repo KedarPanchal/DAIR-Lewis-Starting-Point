@@ -1,7 +1,6 @@
 #ifndef GRAPH_ALGORITHMS_HPP
 #define GRAPH_ALGORITHMS_HPP
 
-#include <vector>
 #include <unordered_set>
 
 #include "cgal_types.hpp"

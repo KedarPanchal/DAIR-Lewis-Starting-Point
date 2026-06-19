@@ -1,6 +1,7 @@
 #include "graph_algorithms.hpp"
 
 #include <vector>
+#include <iterator>
 #include <unordered_set>
 #include <unordered_map>
 #include <optional>
@@ -22,20 +23,27 @@ PolygonSet compute_coverage(const Node& source, const Node& target, const Graph&
     return PolygonSet();
 }
 
+// TODO: Actually implement this
+fscalar area(const CurvedTraits::Polygon_2& polygon) {
+    return CGAL::abs(polygon.area());
+}
+
 fscalar area(const PolygonSet& ps) {
-    fscalar area = 0;
+    fscalar total_area = 0;
     // Find the area of the polygon set by splitting it into its polygons with holes
-    std::vector<HoledPolygon> polygons;
+    std::vector<CurvedTraits::Polygon_with_holes_2> polygons;
     ps.polygons_with_holes(std::back_inserter(polygons));
     for (const auto& polygon : polygons) {
-        area += CGAL::abs(polygon.outer_boundary().area());
+        total_area += area(polygon.outer_boundary());
         // Subtract area from holes
         for (const auto& hole : polygon.holes()) {
-            area -= CGAL::abs(hole.area());
+            auto reversed_hole = hole;
+            reversed_hole.reverse_orientation();
+            total_area -= area(reversed_hole);
         }
     }
 
-    return area;
+    return total_area;
 }
 
 void finishing_times(const Graph& g, const Node& node, std::unordered_set<Node>& visited, std::stack<Node>& stack, size_t min_node) {
