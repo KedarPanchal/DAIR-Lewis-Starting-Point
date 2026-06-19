@@ -18,6 +18,7 @@ class Node {
     Segment seg;
 
 public:
+    Node() = default;
     Node(size_t id, const Segment& segment) : id{id}, seg{segment} {}
 
     size_t ID() const noexcept { return id; }

@@ -5,6 +5,7 @@
 #include "cgal_types.hpp"
 #include "utilities.hpp"
 #include "graph_construction.hpp"
+#include "graph_algorithms.hpp"
 
 /* POLYGON INPUT FORMAT
  * Non-holed polygon: <number of vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  0
@@ -42,5 +43,17 @@ int main() {
     
     // Construct the graph
     Graph graph = construct_graph(wall_space, parameters, theta_max, radius);
+    
+    // Validate algorithm correctness
+    Node brute_force_starting_position = bruteForceBestStartingPoint(graph);
+    Node johnson_starting_position = johnsonBestStartingPoint(graph);
+    std::cout << "Brute force starting position: " << brute_force_starting_position.ID() << std::endl;
+    std::cout << "Johnson's algorithm starting position: " << johnson_starting_position.ID() << std::endl;
+    if (brute_force_starting_position != johnson_starting_position) {
+        std::cerr << "Error: Starting positions do not match!" << std::endl;
+        return 1;
+    } 
+    std::cout << "Starting positions match!" << std::endl;
+    return 0;
 }
 

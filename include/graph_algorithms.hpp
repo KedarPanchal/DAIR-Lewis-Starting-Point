@@ -20,10 +20,11 @@ struct pair_hash {
     }
 };
 
-std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g);
-
 PolygonSet computeCoverage(const Node& source, const Node& target, const Graph& g);
 
 std::unordered_set<std::pair<Node, Node>, pair_hash> computeCoverageEdges(const Node& source, PolygonSet& CCR, const Graph& g);
+
+Node bruteForceBestStartingPoint(const Graph& g);
+Node johnsonBestStartingPoint(const Graph& g);
 
 #endif
