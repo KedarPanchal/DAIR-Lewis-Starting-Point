@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <CGAL/number_utils.h>
+
 #include <boost/container_hash/hash.hpp>
 
 #include "graph_construction.hpp"
@@ -15,7 +17,23 @@ PolygonSet computeCoverage(const Node& source, const Node& target, const Graph& 
     return PolygonSet();
 }
 
-// -- GRAPH ALGORITHMS --------------------------------------------------------
+fscalar area(const PolygonSet& ps) {
+    fscalar area = 0;
+    // Find the area of the polygon set by splitting it into its polygons with holes
+    std::vector<HoledPolygon> polygons;
+    ps.polygons_with_holes(std::back_inserter(polygons));
+    for (const auto& polygon : polygons) {
+        area += CGAL::abs(polygon.outer_boundary().area());
+        // Subtract area from holes
+        for (const auto& hole : polygon.holes()) {
+            area -= CGAL::abs(hole.area());
+        }
+    }
+
+    return area;
+}
+
+// -- PAPER GRAPH ALGORITHMS --------------------------------------------------
 
 // Performs the Floyd-Warshall algorithm and returns the predecessor matrix
 std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g) {
@@ -88,4 +106,27 @@ std::unordered_set<std::pair<Node, Node>, pair_hash> computeCoverageEdges(const 
     }
 
     return covered;
+}
+
+// -- CYCLE ALGORITHMS --------------------------------------------------------
+
+Node bruteForceBestStartingPoint(const Graph& g) {
+    // Run ComputeCoveredEdges for each node in the graph
+    // Map each node to its covered area
+    std::unordered_map<Node, fscalar> coverage_map;
+    for (const auto& [node, _] : g) {
+        PolygonSet ccr;
+        computeCoverageEdges(node, ccr, g);
+        coverage_map[node] = area(ccr);
+    }
+
+    // Find the node with the maximum covered area
+    Node best_node = g.begin()->first;
+    for (const auto& [node, coverage] : coverage_map) {
+        if (coverage > coverage_map[best_node]) {
+            best_node = node;
+        }
+    }
+
+    return best_node;
 }
