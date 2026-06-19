@@ -22,7 +22,7 @@ size_t hash_value(const Node& node) {
     return std::hash<size_t>()(node.ID());
 }
 
-CurvedPolygon buildStadium(const Point& source, const Point& target, const fscalar& radius) {
+CurvedPolygon build_stadium(const Point& source, const Point& target, const fscalar& radius) {
     // The circle centers are radius distance along the vector from source to target, in both directions
     Vector direction = Vector{source, target};
     direction = direction / CGAL::sqrt(direction.squared_length()); // Normalize
@@ -79,9 +79,9 @@ CurvedPolygon buildStadium(const Point& source, const Point& target, const fscal
     return CurvedPolygon(stadium_edges.begin(), stadium_edges.end());
 }
 
-PolygonSet computeCoverage(const Segment& source, const Segment& target, const fscalar& radius) {
-    auto stadium1 = buildStadium(source.source(), target.target(), radius);
-    auto stadium2 = buildStadium(source.target(), target.source(), radius);
+PolygonSet compute_coverage(const Segment& source, const Segment& target, const fscalar& radius) {
+    auto stadium1 = build_stadium(source.source(), target.target(), radius);
+    auto stadium2 = build_stadium(source.target(), target.source(), radius);
     
     PolygonSet coverage{std::move(stadium1)};
     coverage.intersection(std::move(stadium2));
@@ -91,7 +91,7 @@ PolygonSet computeCoverage(const Segment& source, const Segment& target, const f
 // -- GRAPH CONSTRUCTION ALGORITHM --------------------------------------------
 
 // Adds layers around the boundary of a single polygon
-void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
+void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
     static size_t node_id = 0;
 
     for (auto eit = w.edges_begin(); eit != w.edges_end(); ++eit) {
@@ -124,17 +124,17 @@ void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
     }
 }
 
-// AddLayer algorithm from Lewis's doctoral dissertation (Algorithm 3)
-// Well, AddLayerHelper is the actual algorithm, but it's applied to every boundary and hole of the polygon
-void addLayer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) {
-    addLayerHelper(w.outer_boundary(), g, l, o_max);
+// add_layer algorithm from Lewis's doctoral dissertation (Algorithm 3)
+// Well, add_layer_helper is the actual algorithm, but it's applied to every boundary and hole of the polygon
+void add_layer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) {
+    add_layer_helper(w.outer_boundary(), g, l, o_max);
     for (auto hit = w.holes_begin(); hit != w.holes_end(); ++hit) {
-        addLayerHelper(*hit, g, l, o_max);
+        add_layer_helper(*hit, g, l, o_max);
     }
 }
 
-// shootRay algorithm for checking safe actions
-std::optional<Point> shootRay(const HoledPolygon& w, const Point& source, const Vector& direction, const AABBTree& tree) {
+// shoot_ray algorithm for checking safe actions
+std::optional<Point> shoot_ray(const HoledPolygon& w, const Point& source, const Vector& direction, const AABBTree& tree) {
     // Find all intersections of the ray with the polygon boundary
     Ray ray(source, direction);
     std::vector<std::optional<AABBTree::Intersection_and_primitive_id<Ray>::Type>> intersections;
@@ -153,8 +153,8 @@ std::optional<Point> shootRay(const HoledPolygon& w, const Point& source, const 
     else return closest;
 }
 
-// HasEdge algorithm from Lewis's doctoral dissertation (Algorithm 4)
-std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max, const AABBTree& tree) {
+// has_edge algorithm from Lewis's doctoral dissertation (Algorithm 4)
+std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max, const AABBTree& tree) {
     auto d1 = Vector{source.source(), target.target()}
         .transform(Transformation(
                     CGAL::ROTATION, 
@@ -175,8 +175,8 @@ std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, cons
     if (angle > CGAL_PI) return std::nullopt;
 
     // Compute p1 and p2 and check target membership
-    std::optional<Point> p1 = shootRay(w, source.source(), Vector{source.source(), target.target()}, tree);
-    std::optional<Point> p2 = shootRay(w, source.target(), Vector{source.target(), target.source()}, tree);
+    std::optional<Point> p1 = shoot_ray(w, source.source(), Vector{source.source(), target.target()}, tree);
+    std::optional<Point> p2 = shoot_ray(w, source.target(), Vector{source.target(), target.source()}, tree);
     if (
         !p1.has_value() ||
         !p2.has_value() ||
@@ -208,7 +208,7 @@ std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, cons
 Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius) {
     Graph graph;
     // Add the nodes
-    for (const auto& [l, o_max] : parameters) addLayer(w, graph, l, o_max);
+    for (const auto& [l, o_max] : parameters) add_layer(w, graph, l, o_max);
 
     // Add the edges
     // Construct an AABB tree for raycast queries
@@ -223,8 +223,8 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
 
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
-            auto maybe_edge = hasEdge(w, node.segment(), other_node.segment(), convert<hpscalar>(theta_max), tree);
-            if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value(), computeCoverage(node.segment(), other_node.segment(), radius));
+            auto maybe_edge = has_edge(w, node.segment(), other_node.segment(), convert<hpscalar>(theta_max), tree);
+            if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value(), compute_coverage(node.segment(), other_node.segment(), radius));
         }
     }
 

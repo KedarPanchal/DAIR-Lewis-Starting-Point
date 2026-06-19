@@ -44,13 +44,13 @@ size_t hash_value(const Node& node);
 // Adjacency list representation of the graph
 using Graph = std::unordered_map<Node, std::list<std::tuple<Node, Vector, PolygonSet>>>;
 
-void addLayerHelper(const Polygon& w, Graph& g, fscalar l, fscalar o_max);
+void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max);
 
-void addLayer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max);
+void add_layer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max);
 
-std::optional<Point> shootRay(const HoledPolygon& w, const Point& source, const Vector& direction, const AABBTree& tree);
+std::optional<Point> shoot_ray(const HoledPolygon& w, const Point& source, const Vector& direction, const AABBTree& tree);
 
-std::optional<Vector> hasEdge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max, const AABBTree& tree);
+std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max, const AABBTree& tree);
 
 Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius);
 

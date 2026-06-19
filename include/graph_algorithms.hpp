@@ -20,11 +20,11 @@ struct pair_hash {
     }
 };
 
-PolygonSet computeCoverage(const Node& source, const Node& target, const Graph& g);
+PolygonSet compute_coverage(const Node& source, const Node& target, const Graph& g);
 
-std::unordered_set<std::pair<Node, Node>, pair_hash> computeCoverageEdges(const Node& source, PolygonSet& CCR, const Graph& g);
+std::unordered_set<std::pair<Node, Node>, pair_hash> compute_coverage_edges(const Node& source, PolygonSet& CCR, const Graph& g);
 
-Node bruteForceBestStartingPoint(const Graph& g);
-Node johnsonBestStartingPoint(const Graph& g);
+Node brute_force_best_starting_point(const Graph& g);
+Node johnson_best_starting_point(const Graph& g);
 
 #endif

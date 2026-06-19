@@ -14,7 +14,7 @@
 #include "graph_construction.hpp"
 
 // -- HELPER FUNCTIONS --------------------------------------------------------
-PolygonSet computeCoverage(const Node& source, const Node& target, const Graph& g) {
+PolygonSet compute_coverage(const Node& source, const Node& target, const Graph& g) {
     for (const auto& [neighbor, _, ccr] : g.at(source)) {
         if (neighbor == target) return ccr;
     }
@@ -38,11 +38,11 @@ fscalar area(const PolygonSet& ps) {
     return area;
 }
 
-void finishingTimes(const Graph& g, const Node& node, std::unordered_set<Node>& visited, std::stack<Node>& stack, size_t min_node) {
+void finishing_times(const Graph& g, const Node& node, std::unordered_set<Node>& visited, std::stack<Node>& stack, size_t min_node) {
     visited.insert(node);
     for (const auto& [neighbor, _, _] : g.at(node)) {
         if (visited.find(neighbor) == visited.end() && neighbor.ID() >= min_node) {
-            finishingTimes(g, neighbor, visited, stack, min_node);
+            finishing_times(g, neighbor, visited, stack, min_node);
         }
     }
     stack.push(node);
@@ -59,12 +59,12 @@ Graph transpose(const Graph& g) {
     return g_prime;
 }
 
-void findStronglyConnectedComponent(const Graph& g, const Node& node, std::unordered_set<Node>& visited, Graph& scc, size_t min_node) {
+void find_strongly_connected_component(const Graph& g, const Node& node, std::unordered_set<Node>& visited, Graph& scc, size_t min_node) {
     visited.insert(node);
     for (const auto& [neighbor, vec, ccr] : g.at(node)) {
         if (visited.find(neighbor) == visited.end() && neighbor.ID() >= min_node) {
             scc[neighbor].emplace_back(node, vec, ccr);
-            findStronglyConnectedComponent(g, neighbor, visited, scc, min_node);
+            find_strongly_connected_component(g, neighbor, visited, scc, min_node);
         }
     }
 }
@@ -147,7 +147,7 @@ std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g) {
 }
 
 // ComputeCoveredEdges algorithm from Lewis's doctoral dissertation (Algorithm 5)
-std::unordered_set<std::pair<Node, Node>, pair_hash> computeCoverageEdges(const Node& source, PolygonSet& ccr, const Graph& g) {
+std::unordered_set<std::pair<Node, Node>, pair_hash> compute_coverage_edges(const Node& source, PolygonSet& ccr, const Graph& g) {
     std::vector<std::vector<std::optional<Node>>> p = floyd_warshall(g);
     std::unordered_set<std::pair<Node, Node>, pair_hash> covered;
 
@@ -163,7 +163,7 @@ std::unordered_set<std::pair<Node, Node>, pair_hash> computeCoverageEdges(const 
                 Node end = u;
                 while (end != *s) {
                     Node penultimate = *p[source][end];
-                    ccr.join(computeCoverage(penultimate, end, g));
+                    ccr.join(compute_coverage(penultimate, end, g));
                     covered.emplace(penultimate, end);
                     end = penultimate;
                 }
@@ -171,7 +171,7 @@ std::unordered_set<std::pair<Node, Node>, pair_hash> computeCoverageEdges(const 
                 end = source;
                 while (end != *t) {
                     Node penultimate = *p[end][source];
-                    ccr.join(computeCoverage(end, penultimate, g));
+                    ccr.join(compute_coverage(end, penultimate, g));
                     covered.emplace(end, penultimate);
                     end = penultimate;
                 }
@@ -186,13 +186,13 @@ std::unordered_set<std::pair<Node, Node>, pair_hash> computeCoverageEdges(const 
 
 // Brute force algorithm for finding the best starting point for Lewis's algorithm
 // Used to validate the actual algorithm for finding the best starting point
-Node bruteForceBestStartingPoint(const Graph& g) {
+Node brute_force_best_starting_point(const Graph& g) {
     // Run ComputeCoveredEdges for each node in the graph
     // Map each node to its covered area
     std::unordered_map<Node, fscalar> coverage_map;
     for (const auto& [node, _] : g) {
         PolygonSet ccr;
-        computeCoverageEdges(node, ccr, g);
+        compute_coverage_edges(node, ccr, g);
         coverage_map[node] = area(ccr);
     }
 
@@ -213,7 +213,7 @@ std::vector<Graph> kosaraju(const Graph& g, Node min_node) {
     std::stack<Node> stack;
     std::unordered_set<Node> visited;
 
-    finishingTimes(g, min_node, visited, stack, min_node);
+    finishing_times(g, min_node, visited, stack, min_node);
     Graph g_prime = transpose(g);
 
     visited.clear();
@@ -221,7 +221,7 @@ std::vector<Graph> kosaraju(const Graph& g, Node min_node) {
         if (node.ID() < min_node.ID()) continue;
         if (visited.find(node) != visited.end()) continue;
         Graph scc;
-        findStronglyConnectedComponent(g_prime, node, visited, scc, min_node);
+        find_strongly_connected_component(g_prime, node, visited, scc, min_node);
         if (!scc.empty()) sccs.push_back(std::move(scc));
     }
 
@@ -229,7 +229,7 @@ std::vector<Graph> kosaraju(const Graph& g, Node min_node) {
 }
 
 // Implement Johnson's algorithm for enumerating over the cycles of a directed graph
-Node johnsonBestStartingPoint(const Graph& g) {
+Node johnson_best_starting_point(const Graph& g) {
     std::vector<bool> blocked(g.size(), false);
     std::unordered_map<Node, std::unordered_set<Node>> predecessors;
     std::stack<Node> stack;
