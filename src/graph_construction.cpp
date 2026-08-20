@@ -208,7 +208,10 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
 Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius) {
     Graph graph;
     // Add the nodes
-    for (const auto& [l, o_max] : parameters) add_layer(w, graph, l, o_max);
+    for (const auto& [l, o_max] : parameters) {
+        std::cout << "Adding layer with length " << l << " and offset " << o_max << std::endl;
+        add_layer(w, graph, l, o_max);
+    }
 
     // Add the edges
     // Construct an AABB tree for raycast queries
@@ -224,7 +227,10 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
             auto maybe_edge = has_edge(w, node.segment(), other_node.segment(), convert<hpscalar>(theta_max), tree);
-            if (maybe_edge.has_value()) edges.emplace_back(other_node, maybe_edge.value(), compute_coverage(node.segment(), other_node.segment(), radius));
+            if (maybe_edge.has_value()) {
+                std::cout << "Adding edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;
+                edges.emplace_back(other_node, maybe_edge.value(), compute_coverage(node.segment(), other_node.segment(), radius));
+            }
         }
     }
 

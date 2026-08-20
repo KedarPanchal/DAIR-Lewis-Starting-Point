@@ -45,10 +45,10 @@ int main() {
     Graph graph = construct_graph(wall_space, parameters, theta_max, radius);
     
     // Validate algorithm correctness
-    Node brute_force_starting_position = brute_force_best_starting_point(graph);
     Node johnson_starting_position = johnson_best_starting_point(graph);
-    std::cout << "Brute force starting position: " << brute_force_starting_position.ID() << std::endl;
     std::cout << "Johnson's algorithm starting position: " << johnson_starting_position.ID() << std::endl;
+    Node brute_force_starting_position = brute_force_best_starting_point(graph);
+    std::cout << "Brute force starting position: " << brute_force_starting_position.ID() << std::endl;
     if (brute_force_starting_position != johnson_starting_position) {
         std::cerr << "Error: Starting positions do not match!" << std::endl;
         return 1;

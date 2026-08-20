@@ -14,7 +14,7 @@
 #include "cgal_types.hpp"
 #include "graph_construction.hpp"
 
-// -- HELPER FUNCTIONS --------------------------------------------------------
+// -- GEOMETRIC HELPER FUNCTIONS ----------------------------------------------
 PolygonSet compute_coverage(const Node& source, const Node& target, const Graph& g) {
     for (const auto& [neighbor, _, ccr] : g.at(source)) {
         if (neighbor == target) return ccr;
@@ -23,30 +23,64 @@ PolygonSet compute_coverage(const Node& source, const Node& target, const Graph&
     return PolygonSet();
 }
 
-// TODO: Actually implement this
-fscalar area(const CurvedTraits::Polygon_2& polygon) {
-    return CGAL::abs(polygon.area());
+// Compute area using the shoelace formula for linear edges and the area of a circular segment for curved edges
+// This is used to compute the area of individual holes and outer boundaries
+fscalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
+    fscalar current_area = 0;
+    for (auto edge = polygon.curves_begin(); edge != polygon.curves_end(); ++edge) {
+        // Convert from CGAL::Sqrt_extension to fscalar using the formula a0 + a1 * sqrt(root)
+        fscalar x0 = edge->source().x().a0() + edge->source().x().a1() * CGAL::sqrt(edge->source().x().root());
+        fscalar y0 = edge->source().y().a0() + edge->source().y().a1() * CGAL::sqrt(edge->source().y().root());
+        fscalar x1 = edge->target().x().a0() + edge->target().x().a1() * CGAL::sqrt(edge->target().x().root());
+        fscalar y1 = edge->target().y().a0() + edge->target().y().a1() * CGAL::sqrt(edge->target().y().root());
+        
+        // Shoelace formula for linear edges, area of circular segment for curved edges
+        if (edge->is_linear()) current_area += 0.5 * (x0 * y1 - x1 * y0);
+        // Area of circular segment formula for curved edges
+        else {
+            fscalar cx = edge->supporting_circle().center().x();
+            fscalar cy = edge->supporting_circle().center().y();
+            fscalar r2 = edge->supporting_circle().squared_radius();
+            fscalar r = CGAL::sqrt(edge->supporting_circle().squared_radius());
+            fscalar theta0 = convert<fscalar>(boost::multiprecision::atan2(convert<hpscalar>(y0 - cy), convert<hpscalar>(x0 - cx)));
+            fscalar theta1 = convert<fscalar>(boost::multiprecision::atan2(convert<hpscalar>(y1 - cy), convert<hpscalar>(x1 - cx)));
+            fscalar dtheta = theta1 - theta0;
+            current_area += 0.5 * (cx * (y1 - y0) - cy * (x1 - x0) + r2 * dtheta);
+        }
+    }
+    return current_area;
 }
 
+// Compute area of a polygon set by splitting it into separate polygons
 fscalar area(const PolygonSet& ps) {
     fscalar total_area = 0;
     // Find the area of the polygon set by splitting it into its polygons with holes
     std::vector<CurvedTraits::Polygon_with_holes_2> polygons;
     ps.polygons_with_holes(std::back_inserter(polygons));
     for (const auto& polygon : polygons) {
-        total_area += area(polygon.outer_boundary());
+        // Start with area of outer boundary
+        total_area += polygon_area(polygon.outer_boundary());
         // Subtract area from holes
         for (const auto& hole : polygon.holes()) {
             auto reversed_hole = hole;
             reversed_hole.reverse_orientation();
-            total_area -= area(reversed_hole);
+            total_area -= polygon_area(reversed_hole);
         }
     }
 
     return total_area;
 }
 
-void finishing_times(const Graph& g, const Node& node, std::unordered_set<Node>& visited, std::stack<Node>& stack, size_t min_node) {
+// -- GRAPH HELPER FUNCTIONS --------------------------------------------------
+// Find the finishing times of the nodes using DFS
+// These times are stored as a stack
+void finishing_times(
+        const Graph& g, 
+        const Node& node, 
+        std::unordered_set<Node>& visited, 
+        std::stack<Node>& stack, 
+        size_t min_node
+        ) {
     visited.insert(node);
     for (const auto& [neighbor, _, _] : g.at(node)) {
         if (visited.find(neighbor) == visited.end() && neighbor.ID() >= min_node) {
@@ -56,6 +90,7 @@ void finishing_times(const Graph& g, const Node& node, std::unordered_set<Node>&
     stack.push(node);
 }
 
+// Find the transpose of a graph for Kosaraju's algorithm
 Graph transpose(const Graph& g) {
     Graph g_prime;
     for (const auto& [node, neighbors] : g) {
@@ -67,7 +102,14 @@ Graph transpose(const Graph& g) {
     return g_prime;
 }
 
-void find_strongly_connected_component(const Graph& g, const Node& node, std::unordered_set<Node>& visited, Graph& scc, size_t min_node) {
+// Find the strongly connected component containing a given node using DFS
+void find_strongly_connected_component(
+        const Graph& g, 
+        const Node& node, 
+        std::unordered_set<Node>& visited, 
+        Graph& scc, 
+        size_t min_node
+        ) {
     visited.insert(node);
     for (const auto& [neighbor, vec, ccr] : g.at(node)) {
         if (visited.find(neighbor) == visited.end() && neighbor.ID() >= min_node) {
@@ -77,6 +119,7 @@ void find_strongly_connected_component(const Graph& g, const Node& node, std::un
     }
 }
 
+// Unblock a node for Johnson's algorithm
 void unblock(const Node& node, std::vector<bool>& blocked, std::unordered_map<Node, std::unordered_set<Node>>& predecessors) {
     blocked[node.ID()] = false;
     for (const Node& predecessor : predecessors[node]) {
@@ -85,6 +128,7 @@ void unblock(const Node& node, std::vector<bool>& blocked, std::unordered_map<No
     predecessors[node].clear();
 }
 
+// Find a cycle in a directed graph using Johnson's algorithm
 bool circuit(
         const Graph& g, 
         const Node& v, 
@@ -95,6 +139,7 @@ bool circuit(
         PolygonSet& ccr, 
         std::unordered_map<Node, fscalar>& coverage_map
         ) {
+    std::cout << "Finding cycle starting at node " << v.ID() << " for strongly connected component containing node " << s.ID() << std::endl;
     bool found_cycle = false;
 
     stack.push(v);
@@ -154,7 +199,7 @@ std::vector<std::vector<std::optional<Node>>> floyd_warshall(const Graph& g) {
     return prev;
 }
 
-// ComputeCoveredEdges algorithm from Lewis's doctoral dissertation (Algorithm 5)
+// ComputeCoverageEdges algorithm from Lewis's doctoral dissertation (Algorithm 5)
 std::unordered_set<std::pair<Node, Node>, pair_hash> compute_coverage_edges(const Node& source, PolygonSet& ccr, const Graph& g) {
     std::vector<std::vector<std::optional<Node>>> p = floyd_warshall(g);
     std::unordered_set<std::pair<Node, Node>, pair_hash> covered;
@@ -199,6 +244,7 @@ Node brute_force_best_starting_point(const Graph& g) {
     // Map each node to its covered area
     std::unordered_map<Node, fscalar> coverage_map;
     for (const auto& [node, _] : g) {
+        std::cout << "Evaluating node " << node.ID() << " using brute force algorithm" << std::endl;
         PolygonSet ccr;
         compute_coverage_edges(node, ccr, g);
         coverage_map[node] = area(ccr);
@@ -252,6 +298,7 @@ Node johnson_best_starting_point(const Graph& g) {
 
     while (s < g.size()) {
         // Find the strongly connected component that contains s
+        std::cout << "Finding strongly connected components for node " << s.ID() << std::endl;
         std::vector<Graph> sccs = kosaraju(g, s);
         Graph scc;
         for (const Graph& component : sccs) {
@@ -269,6 +316,7 @@ Node johnson_best_starting_point(const Graph& g) {
 
         // Find cycles in the scc using Johnson's algorithm
         PolygonSet ccr;
+        std::cout << "Finding cycles in strongly connected component containing node " << s.ID() << std::endl;
         circuit(scc, s, s, blocked, predecessors, stack, ccr, coverage_map);
         s = nodes_by_id[s.ID() + 1];
     }
@@ -276,6 +324,7 @@ Node johnson_best_starting_point(const Graph& g) {
     // Find the node with the greatest coverage
     Node best_node = g.begin()->first;
     for (const auto& [node, coverage] : coverage_map) {
+        std::cout << "Evaluating node " << node.ID() << " with coverage " << coverage << std::endl;
         if (coverage > coverage_map[best_node]) best_node = node;
     }
     return best_node;
