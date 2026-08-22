@@ -271,11 +271,13 @@ std::vector<Graph> kosaraju(const Graph& g, Node min_node) {
     Graph g_prime = transpose(g);
 
     visited.clear();
-    for (const auto& [node, _] : g) {
-        if (node.ID() < min_node.ID()) continue;
-        if (visited.find(node) != visited.end()) continue;
+    while (!stack.empty()) {
+        Node current_node = stack.top();
+        stack.pop();
+        if (current_node.ID() < min_node.ID()) continue;
+        if (visited.find(current_node) != visited.end()) continue;
         Graph scc;
-        find_strongly_connected_component(g_prime, node, visited, scc, min_node);
+        find_strongly_connected_component(g_prime, current_node, visited, scc, min_node);
         if (!scc.empty()) sccs.push_back(std::move(scc));
     }
 
