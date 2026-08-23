@@ -262,20 +262,29 @@ Node brute_force_best_starting_point(const Graph& g) {
 }
 
 // Implement Kosaraju's algorithm for finding strongly connected components of a directed graph
-std::vector<Graph> kosaraju(const Graph& g, Node min_node) {
+std::vector<Graph> kosaraju(const Graph& g, const Node& min_node) {
     std::vector<Graph> sccs;
     std::stack<Node> stack;
     std::unordered_set<Node> visited;
+    
+    // Find finishing times of all nodes in the graph using DFS
+    for (const auto& [node, _] : g) {
+        if (node.ID() < min_node.ID()) continue;
+        if (visited.find(node) == visited.end()) finishing_times(g, node, visited, stack, min_node);
+    }
 
-    finishing_times(g, min_node, visited, stack, min_node);
+    // Transpose graph
     Graph g_prime = transpose(g);
-
+    
+    // Find SCCs by performing DFS on the transposed graph in the order of finishing times
     visited.clear();
     while (!stack.empty()) {
         Node current_node = stack.top();
         stack.pop();
+
         if (current_node.ID() < min_node.ID()) continue;
         if (visited.find(current_node) != visited.end()) continue;
+
         Graph scc;
         find_strongly_connected_component(g_prime, current_node, visited, scc, min_node);
         if (!scc.empty()) sccs.push_back(std::move(scc));
