@@ -111,6 +111,9 @@ void find_strongly_connected_component(
         size_t min_node
         ) {
     visited.insert(node);
+    // Add the node to the strongly connected component
+    // This is done in case a node has no outgoing edges
+    scc.try_emplace(node, std::list<std::tuple<Node, Vector, PolygonSet>>{});
     for (const auto& [neighbor, vec, ccr] : g.at(node)) {
         if (visited.find(neighbor) == visited.end() && neighbor.ID() >= min_node) {
             scc[neighbor].emplace_back(node, vec, ccr);
