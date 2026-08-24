@@ -308,9 +308,9 @@ Node johnson_best_starting_point(const Graph& g) {
     for (const auto& [node, _] : g) {
         nodes_by_id[node.ID()] = node;
     }
-    Node s = nodes_by_id[0];
 
-    while (s < g.size()) {
+    for (size_t i = 0; i < g.size(); ++i) {
+        Node s = nodes_by_id[i];
         // Find the strongly connected component that contains s
         std::cout << "Finding strongly connected components for node " << s.ID() << std::endl;
         std::vector<Graph> sccs = kosaraju(g, s);
@@ -332,7 +332,6 @@ Node johnson_best_starting_point(const Graph& g) {
         PolygonSet ccr;
         std::cout << "Finding cycles in strongly connected component containing node " << s.ID() << std::endl;
         circuit(scc, s, s, blocked, predecessors, stack, ccr, coverage_map);
-        s = nodes_by_id[s.ID() + 1];
     }
     
     // Find the node with the greatest coverage
