@@ -2,6 +2,7 @@
 #define GRAPH_ALGORITHMS_HPP
 
 #include <unordered_set>
+#include <list>
 
 #include "cgal_types.hpp"
 #include "graph_construction.hpp"
@@ -23,7 +24,6 @@ PolygonSet compute_coverage(const Node& source, const Node& target, const Graph&
 
 std::unordered_set<std::pair<Node, Node>, pair_hash> compute_coverage_edges(const Node& source, PolygonSet& CCR, const Graph& g);
 
-Node brute_force_best_starting_point(const Graph& g);
-Node johnson_best_starting_point(const Graph& g);
+std::list<std::pair<Graph, fscalar>> scc_areas(const Graph& g);
 
 #endif

@@ -44,16 +44,21 @@ int main() {
     // Construct the graph
     Graph graph = construct_graph(wall_space, parameters, theta_max, radius);
     
-    // Validate algorithm correctness
-    Node johnson_starting_position = johnson_best_starting_point(graph);
-    std::cout << "Johnson's algorithm starting position: " << johnson_starting_position.ID() << std::endl;
-    Node brute_force_starting_position = brute_force_best_starting_point(graph);
-    std::cout << "Brute force starting position: " << brute_force_starting_position.ID() << std::endl;
-    if (brute_force_starting_position != johnson_starting_position) {
-        std::cerr << "Error: Starting positions do not match!" << std::endl;
-        return 1;
-    } 
-    std::cout << "Starting positions match!" << std::endl;
+    // Find best starting position(s)
+    std::list<std::pair<Graph, fscalar>> areas = scc_areas(graph);
+    fscalar max_area = 0;
+    size_t max_scc_index = 0;
+    for (const auto& [scc, area] : areas) {
+        if (area > max_area) {
+            max_area = area;
+            max_scc_index = scc.begin()->first.ID();
+        }
+        std::cout << "SCC with area " << area << " has nodes: ";
+        for (const auto& [node, _] : scc) {
+            std::cout << '\t' << node.ID() << std::endl;
+        }
+    }
+    std::cout << "Best starting position is in SCC with area " << max_area << " and node ID " << max_scc_index << std::endl;
     return 0;
 }
 

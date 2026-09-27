@@ -4,6 +4,7 @@
 #include <iterator>
 #include <unordered_set>
 #include <unordered_map>
+#include <list>
 #include <optional>
 #include <stack>
 
@@ -71,6 +72,16 @@ fscalar area(const PolygonSet& ps) {
     return total_area;
 }
 
+// Compute area of all edges in a strongly connected component
+fscalar scc_area(const Graph& scc) {
+    PolygonSet ccr;
+    for (const auto& [node, neighbors] : scc) {
+        for (const auto& [_, _, ccr_prime] : neighbors) ccr.join(ccr_prime);
+    }
+
+    return area(ccr);
+}
+
 // -- GRAPH HELPER FUNCTIONS --------------------------------------------------
 // Find the finishing times of the nodes using DFS
 // These times are stored as a stack
@@ -78,13 +89,12 @@ void finishing_times(
         const Graph& g, 
         const Node& node, 
         std::unordered_set<Node>& visited, 
-        std::stack<Node>& stack, 
-        size_t min_node
+        std::stack<Node>& stack
         ) {
     visited.insert(node);
     for (const auto& [neighbor, _, _] : g.at(node)) {
-        if (visited.find(neighbor) == visited.end() && neighbor.ID() >= min_node) {
-            finishing_times(g, neighbor, visited, stack, min_node);
+        if (visited.find(neighbor) == visited.end()) {
+            finishing_times(g, neighbor, visited, stack);
         }
     }
     stack.push(node);
@@ -107,61 +117,18 @@ void find_strongly_connected_component(
         const Graph& g, 
         const Node& node, 
         std::unordered_set<Node>& visited, 
-        Graph& scc, 
-        size_t min_node
+        Graph& scc
         ) {
     visited.insert(node);
     // Add the node to the strongly connected component
     // This is done in case a node has no outgoing edges
     scc.try_emplace(node, std::list<std::tuple<Node, Vector, PolygonSet>>{});
     for (const auto& [neighbor, vec, ccr] : g.at(node)) {
-        if (visited.find(neighbor) == visited.end() && neighbor.ID() >= min_node) {
+        if (visited.find(neighbor) == visited.end()) {
             scc[neighbor].emplace_back(node, vec, ccr);
-            find_strongly_connected_component(g, neighbor, visited, scc, min_node);
+            find_strongly_connected_component(g, neighbor, visited, scc);
         }
     }
-}
-
-// Unblock a node for Johnson's algorithm
-void unblock(const Node& node, std::vector<bool>& blocked, std::unordered_map<Node, std::unordered_set<Node>>& predecessors) {
-    blocked[node.ID()] = false;
-    for (const Node& predecessor : predecessors[node]) {
-        if (blocked[predecessor.ID()]) unblock(predecessor, blocked, predecessors);
-    }
-    predecessors[node].clear();
-}
-
-// Find a cycle in a directed graph using Johnson's algorithm
-bool circuit(
-        const Graph& g, 
-        const Node& v, 
-        const Node& s, 
-        std::vector<bool>& blocked, 
-        std::unordered_map<Node, std::unordered_set<Node>>& predecessors, 
-        std::stack<Node>& stack, 
-        PolygonSet& ccr, 
-        std::unordered_map<Node, fscalar>& coverage_map
-        ) {
-    std::cout << "Finding cycle starting at node " << v.ID() << " for strongly connected component containing node " << s.ID() << std::endl;
-    bool found_cycle = false;
-
-    stack.push(v);
-    blocked[v.ID()] = true;
-    for (const auto& [w, _, coverage] : g.at(v)) {
-        if (w == s) {
-            // Found a cycle
-            coverage_map[s] += area(ccr);
-            found_cycle = true;
-        } else if (!blocked[w.ID()]) {
-            PolygonSet new_ccr = ccr;
-            new_ccr.join(coverage);
-            if (circuit(g, w, s, blocked, predecessors, stack, new_ccr, coverage_map)) found_cycle = true;
-        }
-    }
-    if (found_cycle) unblock(v, blocked, predecessors);
-    else for (const auto& [w, _, _] : g.at(v)) predecessors[w].insert(v);
-
-    return found_cycle;
 }
 
 // -- PAPER GRAPH ALGORITHMS --------------------------------------------------
@@ -240,105 +207,43 @@ std::unordered_set<std::pair<Node, Node>, pair_hash> compute_coverage_edges(cons
 
 // -- CYCLE ALGORITHMS --------------------------------------------------------
 
-// Brute force algorithm for finding the best starting point for Lewis's algorithm
-// Used to validate the actual algorithm for finding the best starting point
-Node brute_force_best_starting_point(const Graph& g) {
-    // Run ComputeCoveredEdges for each node in the graph
-    // Map each node to its covered area
-    std::unordered_map<Node, fscalar> coverage_map;
-    for (const auto& [node, _] : g) {
-        std::cout << "Evaluating node " << node.ID() << " using brute force algorithm" << std::endl;
-        PolygonSet ccr;
-        compute_coverage_edges(node, ccr, g);
-        coverage_map[node] = area(ccr);
-    }
-
-    // Find the node with the maximum covered area
-    Node best_node = g.begin()->first;
-    for (const auto& [node, coverage] : coverage_map) {
-        if (coverage > coverage_map[best_node]) {
-            best_node = node;
-        }
-    }
-
-    return best_node;
-}
-
 // Implement Kosaraju's algorithm for finding strongly connected components of a directed graph
-std::vector<Graph> kosaraju(const Graph& g, const Node& min_node) {
-    std::vector<Graph> sccs;
+// The best starting point(s) is the SCC that covers the most area
+// Using std:list is okay here since we're not doing any lookups, just iterating over it
+// TODO: Eventually replace this with Tarjan's algorithm for better performance
+std::list<std::pair<Graph, fscalar>> scc_areas(const Graph& g) {
     std::stack<Node> stack;
     std::unordered_set<Node> visited;
-    
+    std::list<std::pair<Graph, fscalar>> areas;
+
     // Find finishing times of all nodes in the graph using DFS
     for (const auto& [node, _] : g) {
-        if (node.ID() < min_node.ID()) continue;
-        if (visited.find(node) == visited.end()) finishing_times(g, node, visited, stack, min_node);
+        if (visited.find(node) == visited.end()) finishing_times(g, node, visited, stack);
     }
 
-    // Transpose graph
     Graph g_prime = transpose(g);
-    
+
     // Find SCCs by performing DFS on the transposed graph in the order of finishing times
     visited.clear();
     while (!stack.empty()) {
         Node current_node = stack.top();
         stack.pop();
 
-        if (current_node.ID() < min_node.ID()) continue;
+        std::cout << "Finding SCC for node " << current_node.ID() << std::endl;
+
         if (visited.find(current_node) != visited.end()) continue;
 
         Graph scc;
-        find_strongly_connected_component(g_prime, current_node, visited, scc, min_node);
-        if (!scc.empty()) sccs.push_back(std::move(scc));
+        find_strongly_connected_component(g_prime, current_node, visited, scc);
+        if (scc.empty()) continue;
+
+        fscalar current_area = scc_area(scc);
+        std::cout << "Found SCC with area " << current_area << std::endl;
+        areas.emplace_back(std::move(scc), current_area);
     }
 
-    return sccs;
+    return areas;
 }
 
-// Implement Johnson's algorithm for enumerating over the cycles of a directed graph
-Node johnson_best_starting_point(const Graph& g) {
-    std::vector<bool> blocked(g.size(), false);
-    std::unordered_map<Node, std::unordered_set<Node>> predecessors;
-    std::stack<Node> stack;
-    std::unordered_map<Node, fscalar> coverage_map;
-    
-    // Store nodes in a vector for easy access by ID
-    std::vector<Node> nodes_by_id(g.size());
-    for (const auto& [node, _] : g) {
-        nodes_by_id[node.ID()] = node;
-    }
-
-    for (size_t i = 0; i < g.size(); ++i) {
-        Node s = nodes_by_id[i];
-        // Find the strongly connected component that contains s
-        std::cout << "Finding strongly connected components for node " << s.ID() << std::endl;
-        std::vector<Graph> sccs = kosaraju(g, s);
-        Graph scc;
-        for (const Graph& component : sccs) {
-            if (component.find(s) != component.end()) {
-                scc = component;
-                break;
-            }
-        }
-
-        // Reset blocked and predecessors for the scc
-        for (const auto& [node, _] : scc) {
-            blocked[node.ID()] = false;
-            predecessors[node].clear();
-        }
-
-        // Find cycles in the scc using Johnson's algorithm
-        PolygonSet ccr;
-        std::cout << "Finding cycles in strongly connected component containing node " << s.ID() << std::endl;
-        circuit(scc, s, s, blocked, predecessors, stack, ccr, coverage_map);
-    }
-    
-    // Find the node with the greatest coverage
-    Node best_node = g.begin()->first;
-    for (const auto& [node, coverage] : coverage_map) {
-        std::cout << "Evaluating node " << node.ID() << " with coverage " << coverage << std::endl;
-        if (coverage > coverage_map[best_node]) best_node = node;
-    }
-    return best_node;
-}
+// TODO: Implement algorithm for finding the top-n strongly connected components by most total area
+// To my knowledge, this is a factorial-time problem, so look for ways to reduce search space
