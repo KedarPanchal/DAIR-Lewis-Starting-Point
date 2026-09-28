@@ -53,9 +53,9 @@ int main() {
             max_area = area;
             max_scc_index = scc.begin()->first.ID();
         }
-        std::cout << "SCC with area " << area << " has nodes: ";
+        std::cout << "SCC with area " << area << " has nodes: " << std::endl;
         for (const auto& [node, _] : scc) {
-            std::cout << '\t' << node.ID() << std::endl;
+            std::cout << node.ID() << std::endl;
         }
     }
     std::cout << "Best starting position is in SCC with area " << max_area << " and node ID " << max_scc_index << std::endl;
