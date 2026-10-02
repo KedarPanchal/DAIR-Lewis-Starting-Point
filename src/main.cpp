@@ -5,7 +5,7 @@
 #include "cgal_types.hpp"
 #include "utilities.hpp"
 #include "graph_construction.hpp"
-#include "start_point.hpp"
+#include "start_nodes.hpp"
 
 /* POLYGON INPUT FORMAT
  * Non-holed polygon: <number of vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  0
