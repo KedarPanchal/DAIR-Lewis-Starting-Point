@@ -37,12 +37,18 @@ add_executable(robot_start_position
     src/robot_start_position.cpp 
     src/utilities.cpp 
     src/graph_construction.cpp 
-    src/graph_algorithms.cpp
+    src/lewis_algorithms.cpp
+    src/start_point.cpp
 )
 
 # Link libraries and include headers
 target_include_directories(robot_start_position PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(robot_start_position PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 Boost::boost ${MPFR_LIBRARIES})
+target_link_libraries(robot_start_position PRIVATE 
+    CGAL::CGAL 
+    CGAL::CGAL_Qt6 
+    Boost::boost 
+    ${MPFR_LIBRARIES}
+)
 
 # Define preprocessor macros and compile options
 target_compile_definitions(robot_start_position PRIVATE 
