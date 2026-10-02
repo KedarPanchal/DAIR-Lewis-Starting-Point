@@ -59,3 +59,14 @@ std::variant<std::pair<fscalar, fscalar>, std::string> read_robot_parameters(std
     if (is >> theta_max >> radius) return std::make_pair(theta_max, radius);
     else return string_repr;
 }
+
+// Helper function for converting numeric types
+template <typename To, typename From>
+To convert(const From& x) {
+    std::ostringstream str_representation;
+    str_representation << std::setprecision(HP_PRECISION) << x;
+    std::istringstream is(str_representation.str());
+    return To(is.str());
+}
+
+

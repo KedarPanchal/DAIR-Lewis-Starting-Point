@@ -17,4 +17,7 @@ std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream
 
 std::variant<std::pair<fscalar, fscalar>, std::string> read_robot_parameters(std::istream& in);
 
+template <typename To, typename From>
+To convert(const From& x);
+
 #endif

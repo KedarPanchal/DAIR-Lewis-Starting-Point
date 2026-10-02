@@ -4,9 +4,10 @@
 #include <utility>
 #include <tuple>
 
+#include "cgal_types.hpp"
+#include "utilities.hpp"
 #include "start_nodes.hpp"
 #include "graph_construction.hpp"
-#include "cgal_types.hpp"
 
 // -- GEOMETRIC HELPER FUNCTIONS ----------------------------------------------
 
@@ -139,9 +140,9 @@ std::list<std::pair<Graph, fscalar>> scc_areas(const Graph& g) {
         Node current_node = stack.top();
         stack.pop();
 
+        if (visited.find(current_node) != visited.end()) continue;
         std::cout << "Finding SCC for node " << current_node.ID() << std::endl;
 
-        if (visited.find(current_node) != visited.end()) continue;
 
         Graph scc;
         find_strongly_connected_component(g_prime, current_node, visited, scc);

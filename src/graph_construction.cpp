@@ -14,6 +14,7 @@
 #include <boost/container/small_vector.hpp>
 
 #include "cgal_types.hpp"
+#include "utilities.hpp"
 
 // -- HELPER FUNCTIONS --------------------------------------------------------
 
