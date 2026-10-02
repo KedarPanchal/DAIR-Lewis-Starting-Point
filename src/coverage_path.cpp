@@ -1,4 +1,4 @@
-#include "lewis_algorithms.hpp"
+#include "coverage_path.hpp"
 
 #include <vector>
 #include <unordered_set>

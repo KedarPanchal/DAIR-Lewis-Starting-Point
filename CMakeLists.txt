@@ -34,10 +34,10 @@ find_package(MPFR REQUIRED)
 
 # Add the executable target
 add_executable(robot_start_position 
-    src/robot_start_position.cpp 
+    src/main.cpp 
     src/utilities.cpp 
     src/graph_construction.cpp 
-    src/lewis_algorithms.cpp
+    src/coverage_path.cpp
     src/start_point.cpp
 )
 
