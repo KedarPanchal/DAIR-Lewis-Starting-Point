@@ -129,7 +129,9 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
 void add_layer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) {
     add_layer_helper(w.outer_boundary(), g, l, o_max);
     for (auto hit = w.holes_begin(); hit != w.holes_end(); ++hit) {
-        add_layer_helper(*hit, g, l, o_max);
+        Polygon hole_polygon = *hit;
+        hole_polygon.reverse_orientation();
+        add_layer_helper(hole_polygon, g, l, o_max);
     }
 }
 
