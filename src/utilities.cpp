@@ -2,6 +2,7 @@
 
 
 #include <variant>
+#include <tuple>
 #include <list>
 #include <string>
 #include <istream>
@@ -50,13 +51,14 @@ std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream
     return parameters;
 }
 
-std::variant<std::pair<fscalar, fscalar>, std::string> read_robot_parameters(std::istream& in) {
+std::variant<std::tuple<size_t, fscalar, fscalar>, std::string> read_robot_parameters(std::istream& in) {
     std::string string_repr;
     std::getline(in, string_repr);
     std::istringstream is{string_repr};
+    size_t robot_count;
     fscalar theta_max;
     fscalar radius;
-    if (is >> theta_max >> radius) return std::make_pair(theta_max, radius);
+    if (is >> robot_count >> theta_max >> radius) return std::make_tuple(robot_count, theta_max, radius);
     else return string_repr;
 }
 

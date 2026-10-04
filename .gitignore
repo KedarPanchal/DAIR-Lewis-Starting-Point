@@ -1,3 +1,6 @@
+# CMake Artifacts
 build/**
 .cache
+
+# MacOS Artifacts
 **/.DS_Store
