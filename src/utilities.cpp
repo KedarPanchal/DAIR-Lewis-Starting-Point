@@ -63,5 +63,11 @@ std::variant<std::tuple<size_t, fscalar, fscalar>, std::string> read_robot_param
 }
 
 std::ostream& operator<<(std::ostream& os, const Graph& g) {
+    for (const auto& [v, neighbors] : g) {
+        os << "[" << v.ID() << "] -> ";
+        for (const auto& [u, _, _] : neighbors) {
+            os << u.ID() << " ";
+        }
+    }
     return os;
 }

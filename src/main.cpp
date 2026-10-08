@@ -46,7 +46,11 @@ int main() {
     std::vector<SCC> areas = scc_areas(graph);
     // Find the top n starting positions
     std::tuple<std::vector<std::reference_wrapper<const Graph>>, PolygonSet, fscalar> top_n_starts = top_n_sccs(areas, robot_count);
-    std::cout << "Algorithm complete!" << std::endl;
+    short index = 1;
+    for (const Graph& scc : std::get<0>(top_n_starts)) {
+        std::cout << "SCC" << index++ << ":\n";
+        std::cout << scc << std::endl;
+    }
     return 0;
 }
 
