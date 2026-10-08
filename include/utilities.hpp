@@ -9,8 +9,10 @@
 #include <list>
 #include <string>
 #include <utility>
+#include <ostream>
 
 #include "cgal_types.hpp"
+#include "graph_construction.hpp"
 
 // -- UTILITY FUNCTIONS -------------------------------------------------------
 
@@ -20,7 +22,15 @@ std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream
 
 std::variant<std::tuple<size_t, fscalar, fscalar>, std::string> read_robot_parameters(std::istream& in);
 
+// Helper function for converting numeric types
 template <typename To, typename From>
-To convert(const From& x);
+To convert(const From& x) {
+    std::ostringstream str_representation;
+    str_representation << std::setprecision(HP_PRECISION) << x;
+    std::istringstream is(str_representation.str());
+    return To(is.str());
+}
+
+std::ostream& operator<<(std::ostream& os, const Graph& g);
 
 #endif

@@ -1,10 +1,12 @@
 #include <variant>
+#include <vector>
 #include <list>
 #include <utility>
 #include <tuple>
 #include <iostream>
 #include <string>
 #include <variant>
+#include <functional>
 
 #include "cgal_types.hpp"
 #include "utilities.hpp"
@@ -41,20 +43,10 @@ int main() {
     Graph graph = construct_graph(wall_space, parameters, theta_max, radius);
     
     // Find best starting position(s)
-    std::list<std::pair<Graph, fscalar>> areas = scc_areas(graph);
-    fscalar max_area = 0;
-    size_t max_scc_index = 0;
-    for (const auto& [scc, area] : areas) {
-        if (area > max_area) {
-            max_area = area;
-            max_scc_index = scc.begin()->first.ID();
-        }
-        std::cout << "SCC with area " << area << " has nodes: " << std::endl;
-        for (const auto& [node, _] : scc) {
-            std::cout << node.ID() << std::endl;
-        }
-    }
-    std::cout << "Best starting position is in SCC with area " << max_area << " and node ID " << max_scc_index << std::endl;
+    std::vector<SCC> areas = scc_areas(graph);
+    // Find the top n starting positions
+    std::tuple<std::vector<std::reference_wrapper<const Graph>>, PolygonSet, fscalar> top_n_starts = top_n_sccs(areas, robot_count);
+    std::cout << "Algorithm complete!" << std::endl;
     return 0;
 }
 

@@ -27,7 +27,7 @@ Where `<input_file>` is a text file containing the input parameters for the algo
 ```
 <number of boundary vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  <number of holes> <number of vertices in hole 1> <x1> <y1> ... <xn> <yn>  ...  <number of vertices in hole m> <x1> <y1> ... <xn> <yn>
 <number of parameter pairs> <layer length 1> <layer overlap 1> <layer length 2> <layer overlap 2> ... <layer length k> <layer overlap k>
-<robot turning error> <robot radius>
+<robot count> <robot turning error> <robot radius>
 ```
 
 Note that there are two spaces between the last vertex of the boundary and the 

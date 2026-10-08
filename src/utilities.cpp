@@ -62,13 +62,6 @@ std::variant<std::tuple<size_t, fscalar, fscalar>, std::string> read_robot_param
     else return string_repr;
 }
 
-// Helper function for converting numeric types
-template <typename To, typename From>
-To convert(const From& x) {
-    std::ostringstream str_representation;
-    str_representation << std::setprecision(HP_PRECISION) << x;
-    std::istringstream is(str_representation.str());
-    return To(is.str());
+std::ostream& operator<<(std::ostream& os, const Graph& g) {
+    return os;
 }
-
-

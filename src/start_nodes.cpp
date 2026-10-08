@@ -1,7 +1,8 @@
 #include <list>
+#include <vector>
+#include <functional>
 #include <unordered_set>
 #include <stack>
-#include <utility>
 #include <tuple>
 
 #include "cgal_types.hpp"
@@ -60,13 +61,13 @@ fscalar area(const PolygonSet& ps) {
 }
 
 // Compute area of all edges in a strongly connected component
-fscalar scc_area(const Graph& scc) {
+PolygonSet scc_coverage(const Graph& scc) {
     PolygonSet ccr;
     for (const auto& [node, neighbors] : scc) {
         for (const auto& [_, _, ccr_prime] : neighbors) ccr.join(ccr_prime);
     }
 
-    return area(ccr);
+    return ccr;
 }
 
 // -- GRAPH HELPER FUNCTIONS --------------------------------------------------
@@ -118,14 +119,15 @@ void find_strongly_connected_component(
     }
 }
 
+// -- PAPER ALGORITHMS --------------------------------------------------------
+
 // Implement Kosaraju's algorithm for finding strongly connected components of a directed graph
 // The best starting point(s) is the SCC that covers the most area
-// Using std:list is okay here since we're not doing any lookups, just iterating over it
 // TODO: Eventually replace this with Tarjan's algorithm for better performance
-std::list<std::pair<Graph, fscalar>> scc_areas(const Graph& g) {
+std::vector<SCC> scc_areas(const Graph& g) {
     std::stack<Node> stack;
     std::unordered_set<Node> visited;
-    std::list<std::pair<Graph, fscalar>> areas;
+    std::vector<std::tuple<Graph, PolygonSet, fscalar>> areas;
 
     // Find finishing times of all nodes in the graph using DFS
     for (const auto& [node, _] : g) {
@@ -148,10 +150,46 @@ std::list<std::pair<Graph, fscalar>> scc_areas(const Graph& g) {
         find_strongly_connected_component(g_prime, current_node, visited, scc);
         if (scc.empty()) continue;
 
-        fscalar current_area = scc_area(scc);
+        PolygonSet ccr = scc_coverage(scc);
+        fscalar current_area = area(ccr);
         std::cout << "Found SCC with area " << current_area << std::endl;
-        areas.emplace_back(std::move(scc), current_area);
+        areas.emplace_back(std::move(scc), std::move(scc_coverage), current_area);
     }
 
     return areas;
+}
+
+std::tuple<std::vector<std::reference_wrapper<const Graph>>, PolygonSet, fscalar> top_n_sccs(
+        const std::vector<SCC>& areas, 
+        size_t n) {
+    std::vector<unsigned int> counters(n, 0);
+
+    std::vector<std::reference_wrapper<const Graph>> top_sccs;
+    fscalar max_area = 0;
+    PolygonSet top_ccr;
+    while (counters.back() < n) {
+        PolygonSet current_ccr;
+        for (size_t i = 0; i < n; ++i) {
+            current_ccr.join(std::get<1>(areas[counters[i]]));
+        }
+        if (area(current_ccr) > max_area) {
+            max_area = area(current_ccr);
+            top_ccr = std::move(current_ccr);
+            top_sccs.clear();
+            for (size_t i = 0; i < n; ++i) {
+                const Graph& scc = std::ref(std::get<0>(areas[counters[i]]));
+                top_sccs.push_back(scc);
+            }
+        }
+        size_t i = 0;
+        do {
+            ++counters[i];
+            if (counters[i] >= n) {
+                counters[i] = 0;
+                ++i;
+            }
+        } while (i < n && counters[i] >= n);
+    }
+
+    return std::make_tuple(std::move(top_sccs), std::move(top_ccr), max_area);
 }
