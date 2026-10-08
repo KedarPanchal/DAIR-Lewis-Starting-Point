@@ -39,6 +39,7 @@ add_executable(robot_start_position
     src/graph_construction.cpp 
     src/coverage_path.cpp
     src/start_nodes.cpp
+    src/visualization.cpp
 )
 
 # Link libraries and include headers
