@@ -12,6 +12,7 @@
 #include "utilities.hpp"
 #include "graph_construction.hpp"
 #include "start_nodes.hpp"
+#include "visualization.hpp"
 
 int main() {
     // Read wall space from standard input
@@ -20,7 +21,8 @@ int main() {
         std::cerr << "Error: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << std::endl;
         return 1;
     }
-    auto wall_space = std::get<HoledPolygon>(maybe_wall_space);
+    HoledPolygon wall_space = std::get<HoledPolygon>(maybe_wall_space);
+    visualize(wall_space, Graph());  // Visualize the wall space without any graph yet
     
     // Read parameters from standard input
     std::list<std::pair<fscalar, fscalar>> parameters = read_wallpapering_parameters(std::cin);
