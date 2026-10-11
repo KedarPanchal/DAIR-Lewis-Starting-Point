@@ -159,14 +159,11 @@ std::vector<SCC> scc_areas(const Graph& g) {
     return areas;
 }
 
-std::tuple<std::vector<std::reference_wrapper<const Graph>>, PolygonSet, fscalar> top_n_sccs(
-        const std::vector<SCC>& areas, 
-        size_t n) {
+std::vector<SCC> top_n_sccs(const std::vector<SCC>& areas, size_t n) {
     std::vector<unsigned int> counters(n, 0);
-
-    std::vector<std::reference_wrapper<const Graph>> top_sccs;
+    std::vector<SCC> top_sccs;
     fscalar max_area = 0;
-    PolygonSet top_ccr;
+
     while (counters.back() < n) {
         PolygonSet current_ccr;
         for (size_t i = 0; i < n; ++i) {
@@ -174,11 +171,10 @@ std::tuple<std::vector<std::reference_wrapper<const Graph>>, PolygonSet, fscalar
         }
         if (area(current_ccr) > max_area) {
             max_area = area(current_ccr);
-            top_ccr = std::move(current_ccr);
             top_sccs.clear();
             for (size_t i = 0; i < n; ++i) {
                 const Graph& scc = std::ref(std::get<0>(areas[counters[i]]));
-                top_sccs.push_back(scc);
+                top_sccs.push_back(areas[counters[i]]);
             }
         }
         size_t i = 0;
@@ -191,5 +187,5 @@ std::tuple<std::vector<std::reference_wrapper<const Graph>>, PolygonSet, fscalar
         } while (i < n && counters[i] >= n);
     }
 
-    return std::make_tuple(std::move(top_sccs), std::move(top_ccr), max_area);
+    return top_sccs;
 }

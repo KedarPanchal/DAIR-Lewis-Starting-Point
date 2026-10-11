@@ -28,7 +28,10 @@ To convert(const From& x) {
     std::ostringstream str_representation;
     str_representation << std::setprecision(HP_PRECISION) << x;
     std::istringstream is(str_representation.str());
-    return To(is.str());
+
+    To result;
+    is >> std::setprecision(HP_PRECISION) >> result;
+    return result;
 }
 
 std::ostream& operator<<(std::ostream& os, const Graph& g);

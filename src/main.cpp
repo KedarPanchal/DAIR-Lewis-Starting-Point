@@ -22,7 +22,6 @@ int main() {
         return 1;
     }
     HoledPolygon wall_space = std::get<HoledPolygon>(maybe_wall_space);
-    visualize(wall_space, Graph());  // Visualize the wall space without any graph yet
     
     // Read parameters from standard input
     std::list<std::pair<fscalar, fscalar>> parameters = read_wallpapering_parameters(std::cin);
@@ -47,12 +46,8 @@ int main() {
     // Find best starting position(s)
     std::vector<SCC> areas = scc_areas(graph);
     // Find the top n starting positions
-    std::tuple<std::vector<std::reference_wrapper<const Graph>>, PolygonSet, fscalar> top_n_starts = top_n_sccs(areas, robot_count);
-    short index = 1;
-    for (const Graph& scc : std::get<0>(top_n_starts)) {
-        std::cout << "SCC" << index++ << ":\n";
-        std::cout << scc << std::endl;
-    }
+    std::vector<SCC> top_n_starts = top_n_sccs(areas, robot_count);
+    visualize(wall_space, top_n_starts);
     return 0;
 }
 
