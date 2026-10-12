@@ -10,6 +10,6 @@
 using SCC = std::tuple<Graph, PolygonSet, fscalar>;
 
 std::vector<SCC> scc_areas(const Graph& g);
-std::vector<SCC> top_n_sccs(const std::vector<SCC>& areas, size_t n);
+std::vector<SCC> greedy_scc_cover(const std::vector<SCC>& areas, size_t n);
 
 #endif

@@ -6,7 +6,6 @@
 #include <iostream>
 #include <string>
 #include <variant>
-#include <functional>
 
 #include "cgal_types.hpp"
 #include "utilities.hpp"
@@ -46,7 +45,7 @@ int main() {
     // Find best starting position(s)
     std::vector<SCC> areas = scc_areas(graph);
     // Find the top n starting positions
-    std::vector<SCC> top_n_starts = top_n_sccs(areas, robot_count);
+    std::vector<SCC> top_n_starts = greedy_scc_cover(areas, robot_count);
     visualize(wall_space, top_n_starts);
     return 0;
 }

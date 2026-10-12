@@ -159,33 +159,40 @@ std::vector<SCC> scc_areas(const Graph& g) {
     return areas;
 }
 
-// TODO: This entire logic is flawed: rewrite
-std::vector<SCC> top_n_sccs(const std::vector<SCC>& areas, size_t n) {
-    std::vector<unsigned int> counters(n, 0);
+// Naive greedy cover implementation
+// TODO: Replace with the actual greedy cover algorithm
+std::vector<SCC> greedy_scc_cover(const std::vector<SCC>& areas, size_t n) {
     std::vector<SCC> top_sccs;
-    fscalar max_area = 0;
+    PolygonSet covered_area;
 
-    while (counters.back() < n) {
-        PolygonSet current_ccr;
-        for (size_t i = 0; i < n; ++i) {
-            current_ccr.join(std::get<1>(areas[counters[i]]));
-        }
-        if (area(current_ccr) > max_area) {
-            max_area = area(current_ccr);
-            top_sccs.clear();
-            for (size_t i = 0; i < n; ++i) {
-                const Graph& scc = std::ref(std::get<0>(areas[counters[i]]));
-                top_sccs.push_back(areas[counters[i]]);
+    for (size_t i = 0; i < n; ++i) {
+        fscalar best_coverage = 0;
+        PolygonSet best_ccr;
+        // Store visited indices to avoid duplicates
+        std::unordered_set<size_t> best_indices;
+        size_t best_index = 0;
+        for (size_t i = 0; i < areas.size(); ++i) {
+            if (best_indices.find(i) != best_indices.end()) continue;
+
+            PolygonSet ccr = std::get<1>(areas[i]);
+            // Copy for set operations
+            PolygonSet covered_area_copy = covered_area;
+
+            covered_area_copy.difference(ccr);
+            fscalar new_coverage = area(covered_area_copy);
+            if (new_coverage > best_coverage) {
+                best_coverage = new_coverage;
+                best_ccr = ccr;
+                best_index = i;
             }
         }
-        size_t i = 0;
-        do {
-            ++counters[i];
-            if (counters[i] >= n) {
-                counters[i] = 0;
-                ++i;
-            }
-        } while (i < n && counters[i] >= n);
+
+        // Exit early if < n robots can cover the entire area
+        if (best_coverage == 0) break;
+
+        top_sccs.push_back(areas[best_index]);
+        covered_area.join(best_ccr);
+        best_indices.insert(best_index);
     }
 
     return top_sccs;
