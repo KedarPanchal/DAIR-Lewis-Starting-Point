@@ -159,6 +159,7 @@ std::vector<SCC> scc_areas(const Graph& g) {
     return areas;
 }
 
+// TODO: This entire logic is flawed: rewrite
 std::vector<SCC> top_n_sccs(const std::vector<SCC>& areas, size_t n) {
     std::vector<unsigned int> counters(n, 0);
     std::vector<SCC> top_sccs;
