@@ -12,6 +12,7 @@
 #include <CGAL/convex_hull_2.h>
 
 #include <boost/container/small_vector.hpp>
+#include <boost/multiprecision/mpfr.hpp>
 
 #include "cgal_types.hpp"
 #include "utilities.hpp"
@@ -44,7 +45,7 @@ CurvedPolygon build_stadium(const Point& source, const Point& target, const fsca
     CGAL::convex_hull_2(rectangle_points.begin(), rectangle_points.end(), std::back_inserter(sorted_rectangle_points));
 
     // If both points are a source or target, construct an arc in counterclockwise order, otherwise construct a line segment
-    CGAL::Arrangement_2<CurvedTraits> arr;
+    std::list<Curve> curves;
     for (size_t i = 0; i < 4; ++i) {
         size_t next = (i + 1)  % 4;
         if (
@@ -53,19 +54,22 @@ CurvedPolygon build_stadium(const Point& source, const Point& target, const fsca
             ) {
             CurvedTraits::Point_2 source_point(sorted_rectangle_points[i].x(), sorted_rectangle_points[i].y());
             CurvedTraits::Point_2 target_point(sorted_rectangle_points[next].x(), sorted_rectangle_points[next].y());
-            CGAL::insert(arr, CurvedTraits::Curve_2(source_circle, source_point, target_point));
+            curves.push_back(CurvedTraits::Curve_2(source_circle, source_point, target_point));
         } else if (
             (sorted_rectangle_points[i] == target1 || sorted_rectangle_points[i] == target2) &&
             (sorted_rectangle_points[next] == target1 || sorted_rectangle_points[next] == target2)
             ) {
             CurvedTraits::Point_2 source_point(sorted_rectangle_points[i].x(), sorted_rectangle_points[i].y());
             CurvedTraits::Point_2 target_point(sorted_rectangle_points[next].x(), sorted_rectangle_points[next].y());
-            CGAL::insert(arr, CurvedTraits::Curve_2(target_circle, source_point, target_point));
+            curves.push_back(CurvedTraits::Curve_2(target_circle, source_point, target_point));
         } else {
-            CGAL::insert(arr, CurvedTraits::Curve_2(sorted_rectangle_points[i], sorted_rectangle_points[next]));
+            curves.push_back(CurvedTraits::Curve_2(sorted_rectangle_points[i], sorted_rectangle_points[next]));
         }
     }
-
+    CGAL::Arrangement_2<CurvedTraits> arr;
+    CGAL::insert(arr, curves.begin(), curves.end());
+    
+    // Find first bounded face in the arrangement and extract its boundary edges to construct a CurvedPolygon
     CGAL::Arrangement_2<CurvedTraits>::Face_const_iterator face = arr.unbounded_face();
     for (face = arr.faces_begin(); face != arr.faces_end(); ++face) {
         if (!face->is_unbounded()) break;
@@ -103,23 +107,22 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
             g[node] = std::list<std::tuple<Node, Vector, PolygonSet>>{};
         } else if (length > l) {
             // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT
-            size_t ceiling = static_cast<size_t>(CGAL::to_double((length - l) / o_max)) + 1;
+            fscalar ceiling = convert<fscalar>(boost::multiprecision::ceil(convert<hpscalar>((length - l) / o_max)));
             fscalar o = (length - l) / ceiling;
             
             Point x1 = eit->source();
             Point x2 = eit->source();
-
-            Vector direction = eit->to_vector();
-            direction = direction / CGAL::sqrt(direction.squared_length());
+            Vector direction = (eit->to_vector() / length) * l;
+            Vector shift = direction * o;
 
             while (x2 != eit->target()) {
                 // x_2 <- x_1 translated l along *eit
-                x2 = x1 + direction * l;
+                x2 = x1 + direction;
                 // Add segment x1x2 as a node of g
                 Node node{node_id++, Segment(x1, x2)};
                 g[node] = std::list<std::tuple<Node, Vector, PolygonSet>>{};
                 // x_1 <- x_1 translated o along *eit
-                x1 += direction * o;
+                x1 += shift;
             }
         }
     }
@@ -140,17 +143,19 @@ void add_layer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) {
 std::optional<Point> shoot_ray(const HoledPolygon& w, const Point& source, const Vector& direction, const AABBTree& tree) {
     // Find all intersections of the ray with the polygon boundary
     Ray ray(source, direction);
-    std::vector<std::optional<AABBTree::Intersection_and_primitive_id<Ray>::Type>> intersections;
+    std::list<std::optional<AABBTree::Intersection_and_primitive_id<Ray>::Type>> intersections;
     tree.all_intersections(ray, std::back_inserter(intersections));
 
     // Return the point closest to the source (but not equal to the source)
     Point closest = source;
     for (const auto& intersection : intersections) {
-        if (const Point* ipoint = std::get_if<Point>(&(intersection->first))) if (
-            closest == source ||
-            *ipoint != source && 
-            CGAL::squared_distance(source, *ipoint) < CGAL::squared_distance(source, closest)
-            ) closest = *ipoint;
+        if (const Point* ipoint = std::get_if<Point>(&(intersection->first))) {
+            if (
+                closest == source ||
+                *ipoint != source && 
+                CGAL::squared_distance(source, *ipoint) < CGAL::squared_distance(source, closest)
+                ) closest = *ipoint;
+        }
     }
     if (closest == source) return std::nullopt;
     else return closest;
@@ -173,7 +178,9 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
     // Compute dot product-based angle since CGAL doesn't expose a function for computing angles between vectors 
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
     if (d1.squared_length() == 0 || d2.squared_length() == 0) return std::nullopt;
-    fscalar cosine = d1 * d2 / (CGAL::sqrt(d1.squared_length()) * CGAL::sqrt(d2.squared_length()));
+    fscalar d1_length = CGAL::sqrt(d1.squared_length());
+    fscalar d2_length = CGAL::sqrt(d2.squared_length());
+    fscalar cosine = d1 * d2 / (d1_length * d2_length);
     hpscalar angle = boost::multiprecision::acos(convert<hpscalar>(cosine));
     if (angle > CGAL_PI) return std::nullopt;
 
@@ -188,7 +195,6 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
         ) return std::nullopt;
 
     // Create a quadrilateral with source.source(), source.target(), p1, and p2
-    // and sort it according to angle from the centroid
     boost::container::small_vector<Point, 4> quad_points{source.source(), source.target(), *p1, *p2};
     boost::container::small_vector<Point, 4> sorted_quad_points;
     CGAL::convex_hull_2(quad_points.begin(), quad_points.end(), std::back_inserter(sorted_quad_points));
@@ -205,7 +211,7 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
     }
 
     // Return the mid-angle bisector of d1 and d2
-    return (d1 * CGAL::sqrt(d2.squared_length())) + (d2 * CGAL::sqrt(d1.squared_length()));
+    return (d1 * d2_length) + (d2 * d1_length);
 }
 
 Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius) {
@@ -226,10 +232,10 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
 
     AABBTree tree(segments.begin(), segments.end());
     tree.build();
-
+    hpscalar theta_max_hp = convert<hpscalar>(theta_max);
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
-            auto maybe_edge = has_edge(w, node.segment(), other_node.segment(), convert<hpscalar>(theta_max), tree);
+            auto maybe_edge = has_edge(w, node.segment(), other_node.segment(), theta_max_hp, tree);
             if (maybe_edge.has_value()) {
                 std::cout << "Adding edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;
                 edges.emplace_back(other_node, maybe_edge.value(), compute_coverage(node.segment(), other_node.segment(), radius));
