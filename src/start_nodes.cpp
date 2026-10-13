@@ -153,7 +153,7 @@ std::vector<SCC> scc_areas(const Graph& g) {
         PolygonSet ccr = scc_coverage(scc);
         fscalar current_area = area(ccr);
         std::cout << "Found SCC with area " << current_area << std::endl;
-        areas.emplace_back(std::move(scc), std::move(scc_coverage), current_area);
+        areas.emplace_back(std::move(scc), std::move(ccr), current_area);
     }
 
     return areas;
@@ -164,22 +164,20 @@ std::vector<SCC> scc_areas(const Graph& g) {
 std::vector<SCC> greedy_scc_cover(const std::vector<SCC>& areas, size_t n) {
     std::vector<SCC> top_sccs;
     PolygonSet covered_area;
+    std::unordered_set<size_t> best_indices;
 
-    for (size_t i = 0; i < n; ++i) {
+    for (size_t k = 0; k < n; ++k) {
         fscalar best_coverage = 0;
         PolygonSet best_ccr;
         // Store visited indices to avoid duplicates
-        std::unordered_set<size_t> best_indices;
         size_t best_index = 0;
         for (size_t i = 0; i < areas.size(); ++i) {
             if (best_indices.find(i) != best_indices.end()) continue;
 
             PolygonSet ccr = std::get<1>(areas[i]);
-            // Copy for set operations
-            PolygonSet covered_area_copy = covered_area;
 
-            covered_area_copy.difference(ccr);
-            fscalar new_coverage = area(covered_area_copy);
+            ccr.difference(covered_area);
+            fscalar new_coverage = area(ccr);
             if (new_coverage > best_coverage) {
                 best_coverage = new_coverage;
                 best_ccr = ccr;
