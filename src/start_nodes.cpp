@@ -62,11 +62,9 @@ fscalar area(const PolygonSet& ps) {
 // Compute area of all edges in a strongly connected component
 PolygonSet scc_coverage(const Graph& scc) {
     PolygonSet ccr;
-    std::list<PolygonSet> ccr_primes;
     for (const auto& [node, neighbors] : scc) {
-        for (const auto& [_, _, ccr_prime] : neighbors) ccr_primes.push_back(ccr_prime);
+        for (const auto& [_, _, ccr_prime] : neighbors) ccr.join(ccr_prime);
     }
-    ccr.join(ccr_primes.begin(), ccr_primes.end());
 
     return ccr;
 }
