@@ -24,21 +24,17 @@ size_t hash_value(const Node& node) {
     return std::hash<size_t>()(node.ID());
 }
 
-CurvedPolygon build_stadium(const Point& source, const Point& target, const fscalar& radius) {
-    // The circle centers are radius distance along the vector from source to target, in both directions
-    Vector direction = Vector{source, target};
-    direction = direction / CGAL::sqrt(direction.squared_length()); // Normalize
-    Point source_center = source + direction * radius;
-    Point target_center = target - direction * radius;
+// Code to build the edges of a stadium polygon
+std::list<Curve> build_standard_stadium(Point source_center, Point target_center, fscalar radius, const Vector& direction) {
     CGAL::Circle_2<Kernel> source_circle(source_center, radius * radius, CGAL::COUNTERCLOCKWISE);
     CGAL::Circle_2<Kernel> target_circle(target_center, radius * radius, CGAL::COUNTERCLOCKWISE);
 
     // Construct the 4 points needed to construct the rectangle
-    Point source1 = source_center + direction.perpendicular(CGAL::CLOCKWISE) * radius;
-    Point source2 = source_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE) * radius;
-    Point target1 = target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE) * radius;
-    Point target2 = target_center + direction.perpendicular(CGAL::CLOCKWISE) * radius;
-
+    Point source1 = source_center + direction.perpendicular(CGAL::CLOCKWISE);
+    Point source2 = source_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
+    Point target1 = target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
+    Point target2 = target_center + direction.perpendicular(CGAL::CLOCKWISE);
+    std::cout << "Stadium points: " << source1 << ", " << source2 << ", " << target1 << ", " << target2 << std::endl;
     // Place them all into a vector and sort them in counterclockwise order
     boost::container::small_vector<Point, 4> rectangle_points{source1, source2, target1, target2};
     boost::container::small_vector<Point, 4> sorted_rectangle_points;
@@ -54,18 +50,40 @@ CurvedPolygon build_stadium(const Point& source, const Point& target, const fsca
             ) {
             CurvedTraits::Point_2 source_point(sorted_rectangle_points[i].x(), sorted_rectangle_points[i].y());
             CurvedTraits::Point_2 target_point(sorted_rectangle_points[next].x(), sorted_rectangle_points[next].y());
-            curves.push_back(CurvedTraits::Curve_2(source_circle, source_point, target_point));
+            curves.push_back(Curve(source_circle, source_point, target_point));
         } else if (
             (sorted_rectangle_points[i] == target1 || sorted_rectangle_points[i] == target2) &&
             (sorted_rectangle_points[next] == target1 || sorted_rectangle_points[next] == target2)
             ) {
             CurvedTraits::Point_2 source_point(sorted_rectangle_points[i].x(), sorted_rectangle_points[i].y());
             CurvedTraits::Point_2 target_point(sorted_rectangle_points[next].x(), sorted_rectangle_points[next].y());
-            curves.push_back(CurvedTraits::Curve_2(target_circle, source_point, target_point));
+            curves.push_back(Curve(target_circle, source_point, target_point));
         } else {
-            curves.push_back(CurvedTraits::Curve_2(sorted_rectangle_points[i], sorted_rectangle_points[next]));
+            curves.push_back(Curve(sorted_rectangle_points[i], sorted_rectangle_points[next]));
         }
     }
+
+    return curves;
+}
+
+std::list<Curve> build_circular_stadium(Point center, fscalar radius) {
+    CGAL::Circle_2<Kernel> circle(center, radius * radius, CGAL::COUNTERCLOCKWISE);
+    return {Curve(circle)};
+}
+
+CurvedPolygon build_stadium(const Point& source, const Point& target, const fscalar& radius) {
+    std::cout << "Source: " << source << ", Target: " << target << ", Radius: " << radius << std::endl;
+    // The circle centers are radius distance along the vector from source to target, in both directions
+    Vector direction = Vector{source, target};
+    direction = direction / CGAL::sqrt(direction.squared_length()) * radius;
+    Point source_center = source + direction;
+    Point target_center = target - direction;
+
+    // If source and target centers are the same, then the stadium is just a circle
+    std::list<Curve> curves = source_center == target_center 
+        ? build_circular_stadium(source_center, radius) 
+        : build_standard_stadium(source_center, target_center, radius, direction);
+    
     CGAL::Arrangement_2<CurvedTraits> arr;
     CGAL::insert(arr, curves.begin(), curves.end());
     
