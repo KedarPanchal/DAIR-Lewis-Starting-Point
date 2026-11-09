@@ -91,6 +91,8 @@ void finishing_times(
 Graph transpose(const Graph& g) {
     Graph g_prime;
     for (const auto& [node, neighbors] : g) {
+        // Add nodes from the getgo to handle isolated nodes
+        if (g_prime.find(node) == g_prime.end()) g_prime.try_emplace(node, std::list<std::tuple<Node, Vector, PolygonSet>>{});
         for (const auto& [neighbor, vec, ccr] : neighbors) {
             g_prime[neighbor].emplace_back(node, vec, ccr);
         }
@@ -143,7 +145,6 @@ std::vector<SCC> scc_areas(const Graph& g) {
 
         if (visited.find(current_node) != visited.end()) continue;
         std::cout << "Finding SCC for node " << current_node.ID() << std::endl;
-
 
         Graph scc;
         find_strongly_connected_component(g_prime, current_node, visited, scc);
