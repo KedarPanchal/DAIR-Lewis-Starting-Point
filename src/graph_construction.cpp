@@ -138,7 +138,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
             Vector shift = unit_vector * o;
             
             // Ceiling is the number of segments to add, so we need to add ceiling segments
-            for(size_t i = 0; i < ceiling; ++i) {
+            for(size_t i = 0; i <= ceiling; ++i) {
                 // x_2 <- x_1 translated l along *eit
                 x2 = x1 + direction;
                 // Add segment x1x2 as a node of g
@@ -195,10 +195,16 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
                     convert<fscalar>(boost::multiprecision::cos(-theta_max_radians))
                     ));
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
-    if (d1.squared_length() == 0 || d2.squared_length() == 0) return std::nullopt;
+    if (d1.squared_length() == 0 || d2.squared_length() == 0) {
+        std::cout << "Degenerate transition vector, skipping" << std::endl;
+        return std::nullopt;
+    }
 
     // A right turn is when the angle between two vectors is greater than pi radians
-    if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) return std::nullopt;
+    if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) {
+        std::cout << "Angle between vectors is a right turn, skipping" << std::endl;
+        return std::nullopt;
+    }
 
     // Compute p1 and p2 and check target membership
     std::optional<Point> p1 = shoot_ray(w, source.source(), Vector{source.source(), target.target()}, tree);
@@ -208,20 +214,33 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
         !p2.has_value() ||
         !target.has_on(*p1) ||
         !target.has_on(*p2)
-        ) return std::nullopt;
+        ) {
+        std::cout << "Raycast failed, skipping" << std::endl;
+        std::cout << "p1 exists: " << p1.has_value() << std::endl;
+        std::cout << "p2 exists: " << p2.has_value() << std::endl;
+        std::cout << "p1 on target: " << (p1.has_value() ? target.has_on(*p1) : false) << std::endl;
+        std::cout << "p2 on target: " << (p2.has_value() ? target.has_on(*p2) : false) << std::endl;
+        return std::nullopt;
+    }
 
     // Create a quadrilateral with source.source(), source.target(), p1, and p2
-    boost::container::small_vector<Point, 4> quad_points{source.source(), source.target(), *p1, *p2};
+    boost::container::small_vector<Point, 4> quad_points{source.source(), source.target(), *p2, *p1};
     Polygon quadrilateral;
     CGAL::convex_hull_2(quad_points.begin(), quad_points.end(), std::back_inserter(quadrilateral));
     
     // Check if any vertices of w are contained in the quadrilateral
     for (const auto& vertex : w.outer_boundary().vertices()) {
-        if (quadrilateral.has_on_bounded_side(vertex)) return std::nullopt;
+        if (quadrilateral.has_on_bounded_side(vertex)) {
+            std::cout << "Vertex " << vertex << " of outer boundary is contained in quadrilateral, skipping" << std::endl;
+            return std::nullopt;
+        }
     }
     for (const auto& hole : w.holes()) {
         for (const auto& vertex : hole.vertices()) {
-            if (quadrilateral.has_on_bounded_side(vertex)) return std::nullopt;
+            if (quadrilateral.has_on_bounded_side(vertex)) {
+                std::cout << "Vertex " << vertex << " of hole is contained in quadrilateral, skipping" << std::endl;
+                return std::nullopt;
+            }
         }
     }
 
