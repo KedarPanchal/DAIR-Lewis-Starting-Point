@@ -27,6 +27,7 @@ using CurvedTraits = CGAL::Gps_circle_segment_traits_2<Kernel>;
 using Point = CGAL::Point_2<Kernel>;
 using Segment = CGAL::Segment_2<Kernel>;
 using Ray = CGAL::Ray_2<Kernel>;
+using Line = CGAL::Line_2<Kernel>;
 using Vector = CGAL::Vector_2<Kernel>;
 using Curve = CurvedTraits::Curve_2;
 using Polygon = CGAL::Polygon_2<LinearTraits>;

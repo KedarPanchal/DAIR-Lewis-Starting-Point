@@ -29,7 +29,6 @@ fscalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
             fscalar cx = edge->supporting_circle().center().x();
             fscalar cy = edge->supporting_circle().center().y();
             fscalar r2 = edge->supporting_circle().squared_radius();
-            fscalar r = CGAL::sqrt(edge->supporting_circle().squared_radius());
             fscalar theta0 = convert<fscalar>(boost::multiprecision::atan2(convert<hpscalar>(y0 - cy), convert<hpscalar>(x0 - cx)));
             fscalar theta1 = convert<fscalar>(boost::multiprecision::atan2(convert<hpscalar>(y1 - cy), convert<hpscalar>(x1 - cx)));
             fscalar dtheta = theta1 - theta0;
