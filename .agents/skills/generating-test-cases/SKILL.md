@@ -27,20 +27,18 @@ Neither the polygon nor its holes have curvature in their edges or have any
 self-intersections, but both may be convex or non-convex. No three vertices
 of the polygon or its holes may be collinear.
 
-Polygons are described by a list of their vertices in counter-clockwise order.
-Holes are described by a list of their vertices in clockwise order. 
-
-The first line of the `.dat` file contains the full description of the holed
-polygonal environment. It is formatted as follows:
+Polygons are described using the Well-Known Text (WKT) format. A WKT 
+representation of a polygon with holes is formatted as follows:
 
 ```
-<number of boundary vertices> <x1> <y1> <x2> <y2> ... <xn> <yn>  <number of holes> <number of vertices in hole 1> <x1> <y1> ... <xn> <yn>  ...  <number of vertices in hole m> <x1> <y1> ... <xn> <yn>
+POLYGON((x1 y1, x2 y2, ..., xn yn), (h1_x1 h1_y1, h1_x2 h1_y2, ..., h1_xn h1_yn), ..., (hm_x1 hm_y1, hm_x2 hm_y2, ..., hm_xn hm_yn))
 ```
 
-Note that there are two spaces between the last vertex of the boundary and the 
-number of holes, as well as between the last vertex of each hole and the number
-of vertices in the next hole. If a polygon has no holes, the number of holes 
-should be 0 and there should be no additional data after the boundary vertices.
+Where `n` is the number of vertices in the polygon, `m` is the number of holes, 
+and `h1`, `h2`, ..., `hm` are the holes of the polygon. The outer boundary and 
+each hole is described by a list of its vertices in counter-clockwise order, 
+with the first and last vertex being the same to close the polygon. Each vertex 
+is represented by its x and y coordinates, separated by a space.
 
 ## Step 2: Discretize the Environment
 

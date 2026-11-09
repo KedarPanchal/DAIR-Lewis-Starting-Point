@@ -9,6 +9,8 @@
 #include <sstream>
 #include <utility>
 
+#include <CGAL/IO/WKT.h>
+
 #include "cgal_types.hpp"
 
 // Reads a polygon from the input stream
@@ -20,7 +22,7 @@ std::variant<HoledPolygon, std::string> read_polygon(std::istream& in) {
     // Attempt to parse the polygon
     HoledPolygon polygon;
     // If successfully parsed, return the polygon; otherwise, return the original string
-    if (is >> polygon) return polygon;
+    if (CGAL::IO::read_polygon_WKT(is, polygon)) return polygon;
     else return string_repr;
 }
 
