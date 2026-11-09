@@ -51,13 +51,13 @@ std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream
     return parameters;
 }
 
-std::variant<std::tuple<fscalar, fscalar>, std::string> read_robot_parameters(std::istream& in) {
+std::variant<std::pair<fscalar, fscalar>, std::string> read_robot_parameters(std::istream& in) {
     std::string string_repr;
     std::getline(in, string_repr);
     std::istringstream is{string_repr};
     fscalar theta_max;
     fscalar radius;
-    if (is >> theta_max >> radius) return std::make_tuple(theta_max, radius);
+    if (is >> theta_max >> radius) return std::make_pair(theta_max, radius);
     else return string_repr;
 }
 

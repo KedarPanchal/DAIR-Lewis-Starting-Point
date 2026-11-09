@@ -42,14 +42,23 @@ add_executable(robot_start_position
     src/visualization.cpp
 )
 
-# Link libraries and include headers
-target_include_directories(robot_start_position PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(robot_start_position PRIVATE 
-    CGAL::CGAL 
-    CGAL::CGAL_Qt6 
-    Boost::boost 
-    ${MPFR_LIBRARIES}
+add_executable(validate_parameters
+    tools/validate_parameters.cpp
+    src/utilities.cpp
 )
+
+set(ALL_TARGETS robot_start_position validate_parameters)
+
+# Link libraries and include headers
+foreach (target IN LISTS ALL_TARGETS)
+    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    target_link_libraries(${target} PRIVATE 
+        CGAL::CGAL 
+        CGAL::CGAL_Qt6 
+        Boost::boost 
+        ${MPFR_LIBRARIES}
+    )
+endforeach()
 
 # Define preprocessor macros and compile options
 target_compile_definitions(robot_start_position PRIVATE 

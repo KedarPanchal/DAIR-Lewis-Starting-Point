@@ -29,14 +29,14 @@ int main() {
         return 1;
     }
 
-    // Read theta_max from standard input
-    std::variant<std::tuple<fscalar, fscalar>, std::string> maybe_robot_parameters = read_robot_parameters(std::cin);
+    // Read theta_max and robot radius from standard input
+    std::variant<std::pair<fscalar, fscalar>, std::string> maybe_robot_parameters = read_robot_parameters(std::cin);
     if (std::holds_alternative<std::string>(maybe_robot_parameters)) {
         std::cerr << "Error: Invalid robot parameters: " << std::get<std::string>(maybe_robot_parameters) << std::endl;
         return 1;
     }
-    fscalar theta_max = std::get<0>(std::get<std::tuple<fscalar, fscalar>>(maybe_robot_parameters));
-    fscalar radius = std::get<1>(std::get<std::tuple<fscalar, fscalar>>(maybe_robot_parameters));
+    fscalar theta_max = std::get<std::pair<fscalar, fscalar>>(maybe_robot_parameters).first;
+    fscalar radius = std::get<std::pair<fscalar, fscalar>>(maybe_robot_parameters).second;
     
     // Construct the graph
     Graph graph = construct_graph(wall_space, parameters, theta_max, radius);
