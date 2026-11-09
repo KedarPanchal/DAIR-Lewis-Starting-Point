@@ -15,6 +15,7 @@
 
 #include <boost/container/small_vector.hpp>
 #include <boost/multiprecision/mpfr.hpp>
+#include <boost/math/constants/constants.hpp>
 
 #include "cgal_types.hpp"
 #include "utilities.hpp"
@@ -181,17 +182,18 @@ std::optional<Point> shoot_ray(const HoledPolygon& w, const Point& source, const
 
 // has_edge algorithm from Lewis's doctoral dissertation (Algorithm 4)
 std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max, const AABBTree& tree) {
+    hpscalar theta_max_radians = theta_max * boost::math::constants::pi<hpscalar>() / 180;
     Vector d1 = Vector{source.source(), target.target()}
         .transform(Transformation(
                     CGAL::ROTATION, 
-                    convert<fscalar>(boost::multiprecision::sin(theta_max)), 
-                    convert<fscalar>(boost::multiprecision::cos(theta_max))
+                    convert<fscalar>(boost::multiprecision::sin(theta_max_radians)), 
+                    convert<fscalar>(boost::multiprecision::cos(theta_max_radians))
                     ));
     Vector d2 = Vector{source.target(), target.source()}
         .transform(Transformation(
                     CGAL::ROTATION,
-                    convert<fscalar>(boost::multiprecision::sin(-theta_max)),
-                    convert<fscalar>(boost::multiprecision::cos(-theta_max))
+                    convert<fscalar>(boost::multiprecision::sin(-theta_max_radians)),
+                    convert<fscalar>(boost::multiprecision::cos(-theta_max_radians))
                     ));
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
     if (d1.squared_length() == 0 || d2.squared_length() == 0) return std::nullopt;

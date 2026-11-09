@@ -80,9 +80,9 @@ line of the `.dat` file contains these two parameters, formatted as follows:
 ```
 
 Just like in step 2, each parameter should be separated by a single space. The 
-robot turning error must be greater than 0 and less than 180 degrees. The robot 
-radius must be greater than 0 and less than the length of the shortest edge in 
-the polygon or any of its holes.
+robot turning error must be greater than 0 and less than 180 degrees and is 
+specified in degrees. The robot radius must be greater than 0 and less than the 
+length of the shortest edge in the polygon or any of its holes.
 
 ## Step 4: Generate the `.dat` File
 
