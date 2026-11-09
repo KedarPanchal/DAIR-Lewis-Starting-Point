@@ -10,6 +10,8 @@
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/Circle_2.h>
 #include <CGAL/convex_hull_2.h>
+#include <CGAL/Kernel/global_functions.h>
+#include <CGAL/enum.h>
 
 #include <boost/container/small_vector.hpp>
 #include <boost/multiprecision/mpfr.hpp>
@@ -151,9 +153,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
 void add_layer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) {
     add_layer_helper(w.outer_boundary(), g, l, o_max);
     for (auto hit = w.holes_begin(); hit != w.holes_end(); ++hit) {
-        Polygon hole_polygon = *hit;
-        hole_polygon.reverse_orientation();
-        add_layer_helper(hole_polygon, g, l, o_max);
+        add_layer_helper(*hit, g, l, o_max);
     }
 }
 
@@ -181,26 +181,23 @@ std::optional<Point> shoot_ray(const HoledPolygon& w, const Point& source, const
 
 // has_edge algorithm from Lewis's doctoral dissertation (Algorithm 4)
 std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max, const AABBTree& tree) {
-    auto d1 = Vector{source.source(), target.target()}
+    Vector d1 = Vector{source.source(), target.target()}
         .transform(Transformation(
                     CGAL::ROTATION, 
                     convert<fscalar>(boost::multiprecision::sin(theta_max)), 
                     convert<fscalar>(boost::multiprecision::cos(theta_max))
                     ));
-    auto d2 = Vector{source.target(), target.source()}
+    Vector d2 = Vector{source.target(), target.source()}
         .transform(Transformation(
                     CGAL::ROTATION,
                     convert<fscalar>(boost::multiprecision::sin(-theta_max)),
                     convert<fscalar>(boost::multiprecision::cos(-theta_max))
                     ));
-    // Compute dot product-based angle since CGAL doesn't expose a function for computing angles between vectors 
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
     if (d1.squared_length() == 0 || d2.squared_length() == 0) return std::nullopt;
-    fscalar d1_length = CGAL::sqrt(d1.squared_length());
-    fscalar d2_length = CGAL::sqrt(d2.squared_length());
-    fscalar cosine = d1 * d2 / (d1_length * d2_length);
-    hpscalar angle = boost::multiprecision::acos(convert<hpscalar>(cosine));
-    if (angle > CGAL_PI) return std::nullopt;
+
+    // A right turn is when the angle between two vectors is greater than pi radians
+    if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) return std::nullopt;
 
     // Compute p1 and p2 and check target membership
     std::optional<Point> p1 = shoot_ray(w, source.source(), Vector{source.source(), target.target()}, tree);
@@ -229,6 +226,8 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
     }
 
     // Return the mid-angle bisector of d1 and d2
+    fscalar d1_length = CGAL::sqrt(d1.squared_length());
+    fscalar d2_length = CGAL::sqrt(d2.squared_length());
     return (d1 * d2_length) + (d2 * d1_length);
 }
 
