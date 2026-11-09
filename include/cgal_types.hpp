@@ -44,5 +44,5 @@ using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits_2<Kernel, CGAL::AABB_segment_
 constexpr unsigned int HP_PRECISION = 1000;
 using fscalar = Kernel::FT;
 using hpscalar = boost::multiprecision::number<boost::multiprecision::mpfr_float_backend<HP_PRECISION>>; 
-
+const hpscalar EPSILON = boost::multiprecision::pow(hpscalar(10), -HP_PRECISION);
 #endif
