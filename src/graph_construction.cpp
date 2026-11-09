@@ -22,7 +22,7 @@
 #include "utilities.hpp"
 
 // -- GLOBAL CONSTANTS --------------------------------------------------------
-const fscalar FSCALAR_EPSILON = convert<fscalar>(EPSILON);
+const fscalar FSCALAR_EPSILON = convert(EPSILON);
 
 // -- HELPER FUNCTIONS --------------------------------------------------------
 
@@ -83,7 +83,7 @@ CurvedPolygon build_stadium(const Point& source, const Point& target, const fsca
     // The circle centers are radius distance along the vector from source to target, in both directions
     Vector direction = Vector{source, target};
     // Approximate and remove sqrt requirement from Kernel
-    fscalar length = convert<fscalar>(boost::multiprecision::sqrt(convert<hpscalar>(direction.squared_length())));
+    fscalar length = convert(boost::multiprecision::sqrt(convert(direction.squared_length())));
     direction = direction / length * radius;
     Point source_center = source + direction;
     Point target_center = target - direction;
@@ -128,7 +128,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
     static size_t node_id = 0;
 
     for (auto eit = w.edges_begin(); eit != w.edges_end(); ++eit) {
-        fscalar length = convert<fscalar>(boost::multiprecision::sqrt(convert<hpscalar>(eit->squared_length())));
+        fscalar length = convert(boost::multiprecision::sqrt(convert(eit->squared_length())));
         Vector unit_vector = eit->to_vector() / length;
         if (length == l) {
             // Add segment *eit as a node of g
@@ -136,8 +136,8 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
             g[node] = std::list<std::tuple<Node, Vector, PolygonSet>>{};
         } else if (length > l) {
             // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT
-            size_t ceiling = boost::multiprecision::ceil(convert<hpscalar>((length - l) / o_max)).convert_to<size_t>();
-            fscalar o = (length - l) / convert<fscalar>(ceiling);
+            hpscalar ceiling = boost::multiprecision::ceil(convert((length - l) / o_max)).convert_to<size_t>();
+            fscalar o = (length - l) / convert(ceiling);
             
             Point x1 = eit->source();
             Point x2 = eit->source();
@@ -191,14 +191,14 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
     Vector d1 = Vector{source.source(), target.target()}
         .transform(Transformation(
                     CGAL::ROTATION, 
-                    convert<fscalar>(boost::multiprecision::sin(theta_max_radians)), 
-                    convert<fscalar>(boost::multiprecision::cos(theta_max_radians))
+                    convert(boost::multiprecision::sin(theta_max_radians)), 
+                    convert(boost::multiprecision::cos(theta_max_radians))
                     ));
     Vector d2 = Vector{source.target(), target.source()}
         .transform(Transformation(
                     CGAL::ROTATION,
-                    convert<fscalar>(boost::multiprecision::sin(-theta_max_radians)),
-                    convert<fscalar>(boost::multiprecision::cos(-theta_max_radians))
+                    convert(boost::multiprecision::sin(-theta_max_radians)),
+                    convert(boost::multiprecision::cos(-theta_max_radians))
                     ));
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
     if (d1.squared_length() == 0 || d2.squared_length() == 0) {
@@ -275,7 +275,7 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
 
     AABBTree tree(segments.begin(), segments.end());
     tree.build();
-    hpscalar theta_max_hp = convert<hpscalar>(theta_max);
+    hpscalar theta_max_hp = convert(theta_max);
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
             std::cout << "Checking edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;

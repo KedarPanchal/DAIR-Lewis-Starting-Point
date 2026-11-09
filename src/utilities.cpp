@@ -61,6 +61,20 @@ std::variant<std::pair<fscalar, fscalar>, std::string> read_robot_parameters(std
     else return string_repr;
 }
 
+fscalar convert(const hpscalar& x) {
+    mpq_class q;
+    mpfr_get_q(q.get_mpq_t(), x.backend().data());
+    return fscalar(q);
+}
+
+hpscalar convert(const fscalar& x) {
+    const mpq_class q = CGAL::exact(x);
+    hpscalar result;
+    mpfr_set_q(result.backend().data(), q.get_mpq_t(), MPFR_RNDN);
+
+    return result;
+}
+
 std::ostream& operator<<(std::ostream& os, const Graph& g) {
     for (const auto& [v, neighbors] : g) {
         os << "[" << v.ID() << "] -> ";

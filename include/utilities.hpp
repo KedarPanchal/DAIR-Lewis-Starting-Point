@@ -32,6 +32,9 @@ To convert(const From& x) {
     return result;
 }
 
+fscalar convert(const hpscalar& x);
+hpscalar convert(const fscalar& x);
+
 std::ostream& operator<<(std::ostream& os, const Graph& g);
 
 #endif
