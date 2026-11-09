@@ -3,7 +3,7 @@
 
 #include <variant>
 #include <tuple>
-#include <list>
+#include <vector>
 #include <string>
 #include <istream>
 #include <sstream>
@@ -26,7 +26,7 @@ std::variant<HoledPolygon, std::string> read_polygon(std::istream& in) {
     else return string_repr;
 }
 
-std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream& in) {
+std::vector<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream& in) {
     // Extract the line of parameters
     std::string parameter_line;
     std::getline(in, parameter_line);
@@ -36,7 +36,7 @@ std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream
     unsigned int layer_count;
     if (!(is >> layer_count)) return {};
     
-    std::list<std::pair<fscalar, fscalar>> parameters;
+    std::vector<std::pair<fscalar, fscalar>> parameters;
     for (unsigned int i = 0; i < layer_count; ++i) {
         std::string l_str, o_max_str;
         if (!(is >> l_str >> o_max_str)) return {};

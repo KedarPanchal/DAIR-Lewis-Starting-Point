@@ -1,4 +1,3 @@
-#include <list>
 #include <vector>
 #include <unordered_set>
 #include <stack>
@@ -42,7 +41,7 @@ fscalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
 fscalar area(const PolygonSet& ps) {
     fscalar total_area = 0;
     // Find the area of the polygon set by splitting it into its polygons with holes
-    std::list<CurvedTraits::Polygon_with_holes_2> polygons;
+    std::vector<CurvedTraits::Polygon_with_holes_2> polygons;
     ps.polygons_with_holes(std::back_inserter(polygons));
     for (const auto& polygon : polygons) {
         // Start with area of outer boundary
@@ -91,7 +90,7 @@ Graph transpose(const Graph& g) {
     Graph g_prime;
     for (const auto& [node, neighbors] : g) {
         // Add nodes from the getgo to handle isolated nodes
-        if (g_prime.find(node) == g_prime.end()) g_prime.try_emplace(node, std::list<std::tuple<Node, Vector, PolygonSet>>{});
+        if (g_prime.find(node) == g_prime.end()) g_prime.try_emplace(node, std::vector<std::tuple<Node, Vector, PolygonSet>>{});
         for (const auto& [neighbor, vec, ccr] : neighbors) {
             g_prime[neighbor].emplace_back(node, vec, ccr);
         }
@@ -110,7 +109,7 @@ void find_strongly_connected_component(
     visited.insert(node);
     // Add the node to the strongly connected component
     // This is done in case a node has no outgoing edges
-    scc.try_emplace(node, std::list<std::tuple<Node, Vector, PolygonSet>>{});
+    scc.try_emplace(node, std::vector<std::tuple<Node, Vector, PolygonSet>>{});
     for (const auto& [neighbor, vec, ccr] : g.at(node)) {
         if (visited.find(neighbor) == visited.end()) {
             scc[neighbor].emplace_back(node, vec, ccr);

@@ -1,6 +1,6 @@
+#include <vector>
 #include <variant>
 #include <utility>
-#include <list>
 #include <iostream>
 
 #include "cgal_types.hpp"
@@ -13,7 +13,7 @@ int main() {
         return 1;
     }
     
-    std::list<std::pair<fscalar, fscalar>> parameters = read_wallpapering_parameters(std::cin);
+    std::vector<std::pair<fscalar, fscalar>> parameters = read_wallpapering_parameters(std::cin);
     if (parameters.empty()) {
         std::cerr << "Error in line 2: Invalid wallpapering parameters or none provided" << std::endl;
         return 1;

@@ -1,8 +1,6 @@
 #include <variant>
 #include <vector>
-#include <list>
 #include <utility>
-#include <tuple>
 #include <iostream>
 #include <string>
 #include <variant>
@@ -23,7 +21,7 @@ int main() {
     HoledPolygon wall_space = std::get<HoledPolygon>(maybe_wall_space);
     
     // Read parameters from standard input
-    std::list<std::pair<fscalar, fscalar>> parameters = read_wallpapering_parameters(std::cin);
+    std::vector<std::pair<fscalar, fscalar>> parameters = read_wallpapering_parameters(std::cin);
     if (parameters.empty()) {
         std::cerr << "Error: Invalid wallpapering parameters or none provided" << std::endl;
         return 1;

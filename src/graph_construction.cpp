@@ -1,7 +1,6 @@
 #include "graph_construction.hpp"
 
 #include <vector>
-#include <list>
 #include <unordered_map>
 #include <optional>
 #include <iterator>
@@ -126,7 +125,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
         if (length == l) {
             // Add segment *eit as a node of g
             Node node{node_id++, *eit};
-            g[node] = std::list<std::tuple<Node, Vector, PolygonSet>>{};
+            g[node] = std::vector<std::tuple<Node, Vector, PolygonSet>>{};
         } else if (length > l) {
             // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT
             size_t ceiling = boost::multiprecision::ceil(convert<hpscalar>((length - l) / o_max)).convert_to<size_t>();
@@ -143,7 +142,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
                 x2 = x1 + direction;
                 // Add segment x1x2 as a node of g
                 Node node{node_id++, Segment(x1, x2)};
-                g[node] = std::list<std::tuple<Node, Vector, PolygonSet>>{};
+                g[node] = std::vector<std::tuple<Node, Vector, PolygonSet>>{};
                 // x_1 <- x_1 translated o along *eit
                 x1 += shift;
             }
@@ -250,7 +249,7 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
     return CGAL::bisector(d1_line, d2_line).to_vector();
 }
 
-Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius) {
+Graph construct_graph(const HoledPolygon& w, const std::vector<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius) {
     Graph graph;
     // Add the nodes
     for (const auto& [l, o_max] : parameters) {
@@ -262,7 +261,7 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
     // Construct an AABB tree for raycast queries
     std::vector<Segment> segments;
     for (const auto& edge : w.outer_boundary().edges()) segments.push_back(edge);
-    for (const auto hole : w.holes()) {
+    for (const auto& hole : w.holes()) {
         for (const auto& edge : hole.edges()) segments.push_back(edge);
     }
 
