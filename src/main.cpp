@@ -30,23 +30,20 @@ int main() {
     }
 
     // Read theta_max from standard input
-    std::variant<std::tuple<size_t, fscalar, fscalar>, std::string> maybe_robot_parameters = read_robot_parameters(std::cin);
+    std::variant<std::tuple<fscalar, fscalar>, std::string> maybe_robot_parameters = read_robot_parameters(std::cin);
     if (std::holds_alternative<std::string>(maybe_robot_parameters)) {
         std::cerr << "Error: Invalid robot parameters: " << std::get<std::string>(maybe_robot_parameters) << std::endl;
         return 1;
     }
-    size_t robot_count = std::get<0>(std::get<std::tuple<size_t, fscalar, fscalar>>(maybe_robot_parameters));
-    fscalar theta_max = std::get<1>(std::get<std::tuple<size_t, fscalar, fscalar>>(maybe_robot_parameters));
-    fscalar radius = std::get<2>(std::get<std::tuple<size_t, fscalar, fscalar>>(maybe_robot_parameters));
+    fscalar theta_max = std::get<0>(std::get<std::tuple<fscalar, fscalar>>(maybe_robot_parameters));
+    fscalar radius = std::get<1>(std::get<std::tuple<fscalar, fscalar>>(maybe_robot_parameters));
     
     // Construct the graph
     Graph graph = construct_graph(wall_space, parameters, theta_max, radius);
     
     // Find best starting position(s)
     std::vector<SCC> areas = scc_areas(graph);
-    // Find the top n starting positions
-    std::vector<SCC> top_n_starts = greedy_scc_cover(areas, robot_count);
-    visualize(wall_space, top_n_starts);
+    visualize(wall_space, areas);
     return 0;
 }
 
