@@ -14,29 +14,28 @@
 // Compute area using the shoelace formula for linear edges and the area of a circular segment for curved edges
 // This is used to compute the area of individual holes and outer boundaries
 fscalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
-    hpscalar current_area = 0;
+    fscalar current_area = 0;
     for (auto edge = polygon.curves_begin(); edge != polygon.curves_end(); ++edge) {
         // Convert from CGAL::Sqrt_extension to fscalar using the formula a0 + a1 * sqrt(root)
-        // TODO: Replace with an actual overload of the conversion function
-        hpscalar x0 = convert<hpscalar>(edge->source().x());
-        hpscalar y0 = convert<hpscalar>(edge->source().y());
-        hpscalar x1 = convert<hpscalar>(edge->target().x());
-        hpscalar y1 = convert<hpscalar>(edge->target().y());
+        fscalar x0 = edge->source().x().a0() + edge->source().x().a1() * CGAL::sqrt(edge->source().x().root());
+        fscalar y0 = edge->source().y().a0() + edge->source().y().a1() * CGAL::sqrt(edge->source().y().root());
+        fscalar x1 = edge->target().x().a0() + edge->target().x().a1() * CGAL::sqrt(edge->target().x().root());
+        fscalar y1 = edge->target().y().a0() + edge->target().y().a1() * CGAL::sqrt(edge->target().y().root());
         
         // Shoelace formula for linear edges, area of circular segment for curved edges
         if (edge->is_linear()) current_area += 0.5 * (x0 * y1 - x1 * y0);
         // Area of circular segment formula for curved edges
         else {
-            hpscalar cx = convert(edge->supporting_circle().center().x());
-            hpscalar cy = convert(edge->supporting_circle().center().y());
-            hpscalar r2 = convert(edge->supporting_circle().squared_radius());
-            hpscalar theta0 = boost::multiprecision::atan2(y0 - cy, x0 - cx);
-            hpscalar theta1 = boost::multiprecision::atan2(y1 - cy, x1 - cx);
-            hpscalar dtheta = theta1 - theta0;
+            fscalar cx = edge->supporting_circle().center().x();
+            fscalar cy = edge->supporting_circle().center().y();
+            fscalar r2 = edge->supporting_circle().squared_radius();
+            fscalar theta0 = convert<fscalar>(boost::multiprecision::atan2(convert<hpscalar>(y0 - cy), convert<hpscalar>(x0 - cx)));
+            fscalar theta1 = convert<fscalar>(boost::multiprecision::atan2(convert<hpscalar>(y1 - cy), convert<hpscalar>(x1 - cx)));
+            fscalar dtheta = theta1 - theta0;
             current_area += 0.5 * (cx * (y1 - y0) - cy * (x1 - x0) + r2 * dtheta);
         }
     }
-    return convert(current_area);
+    return current_area;
 }
 
 // Compute area of a polygon set by splitting it into separate polygons

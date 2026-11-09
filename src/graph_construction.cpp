@@ -12,7 +12,6 @@
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/Kernel/global_functions.h>
 #include <CGAL/enum.h>
-#include <CGAL/squared_distance_2.h>
 
 #include <boost/container/small_vector.hpp>
 #include <boost/multiprecision/mpfr.hpp>
@@ -20,9 +19,6 @@
 
 #include "cgal_types.hpp"
 #include "utilities.hpp"
-
-// -- GLOBAL CONSTANTS --------------------------------------------------------
-const fscalar FSCALAR_EPSILON = convert(EPSILON);
 
 // -- HELPER FUNCTIONS --------------------------------------------------------
 
@@ -32,9 +28,9 @@ size_t hash_value(const Node& node) {
 }
 
 // Code to build the edges of a stadium polygon
-boost::container::small_vector<Curve, 4> build_standard_stadium(Point source_center, Point target_center, fscalar radius_squared, const Vector& direction) {
-    CGAL::Circle_2<Kernel> source_circle(source_center, radius_squared, CGAL::COUNTERCLOCKWISE);
-    CGAL::Circle_2<Kernel> target_circle(target_center, radius_squared, CGAL::COUNTERCLOCKWISE);
+boost::container::small_vector<Curve, 4> build_standard_stadium(Point source_center, Point target_center, fscalar radius, const Vector& direction) {
+    CGAL::Circle_2<Kernel> source_circle(source_center, radius * radius, CGAL::COUNTERCLOCKWISE);
+    CGAL::Circle_2<Kernel> target_circle(target_center, radius * radius, CGAL::COUNTERCLOCKWISE);
 
     // Construct the 4 points needed to construct the rectangle
     Point source1 = source_center + direction.perpendicular(CGAL::CLOCKWISE);
@@ -73,8 +69,8 @@ boost::container::small_vector<Curve, 4> build_standard_stadium(Point source_cen
     return curves;
 }
 
-boost::container::small_vector<Curve, 4> build_circular_stadium(Point center, fscalar radius_squared) {
-    CGAL::Circle_2<Kernel> circle(center, radius_squared, CGAL::COUNTERCLOCKWISE);
+boost::container::small_vector<Curve, 4> build_circular_stadium(Point center, fscalar radius) {
+    CGAL::Circle_2<Kernel> circle(center, radius * radius, CGAL::COUNTERCLOCKWISE);
     return {Curve(circle)};
 }
 
@@ -82,17 +78,14 @@ CurvedPolygon build_stadium(const Point& source, const Point& target, const fsca
     std::cout << "Source: " << source << ", Target: " << target << ", Radius: " << radius << std::endl;
     // The circle centers are radius distance along the vector from source to target, in both directions
     Vector direction = Vector{source, target};
-    // Approximate and remove sqrt requirement from Kernel
-    fscalar length = convert(boost::multiprecision::sqrt(convert(direction.squared_length())));
-    direction = direction / length * radius;
+    direction = direction / CGAL::sqrt(direction.squared_length()) * radius;
     Point source_center = source + direction;
     Point target_center = target - direction;
 
     // If source and target centers are the same, then the stadium is just a circle
-    // Pass direction.squared_length() since the approximation may lead to a precondition violation if radius is passed instead
-    boost::container::small_vector<Curve, 4> curves = CGAL::squared_distance(source_center, target_center) < FSCALAR_EPSILON
-        ? build_circular_stadium(source_center, direction.squared_length()) 
-        : build_standard_stadium(source_center, target_center, direction.squared_length(), direction);
+    boost::container::small_vector<Curve, 4> curves = source_center == target_center 
+        ? build_circular_stadium(source_center, radius) 
+        : build_standard_stadium(source_center, target_center, radius, direction);
     
     CGAL::Arrangement_2<CurvedTraits> arr;
     CGAL::insert(arr, curves.begin(), curves.end());
@@ -128,7 +121,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
     static size_t node_id = 0;
 
     for (auto eit = w.edges_begin(); eit != w.edges_end(); ++eit) {
-        fscalar length = convert(boost::multiprecision::sqrt(convert(eit->squared_length())));
+        fscalar length = CGAL::sqrt(eit->squared_length());
         Vector unit_vector = eit->to_vector() / length;
         if (length == l) {
             // Add segment *eit as a node of g
@@ -136,8 +129,8 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
             g[node] = std::list<std::tuple<Node, Vector, PolygonSet>>{};
         } else if (length > l) {
             // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT
-            hpscalar ceiling = boost::multiprecision::ceil(convert((length - l) / o_max)).convert_to<size_t>();
-            fscalar o = (length - l) / convert(ceiling);
+            size_t ceiling = boost::multiprecision::ceil(convert<hpscalar>((length - l) / o_max)).convert_to<size_t>();
+            fscalar o = (length - l) / ceiling;
             
             Point x1 = eit->source();
             Point x2 = eit->source();
@@ -145,7 +138,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
             Vector shift = unit_vector * o;
             
             // Ceiling is the number of segments to add, so we need to add ceiling segments
-            for(size_t i = 0; i <= ceiling; ++i) {
+            for(size_t i = 0; i < ceiling; ++i) {
                 // x_2 <- x_1 translated l along *eit
                 x2 = x1 + direction;
                 // Add segment x1x2 as a node of g
@@ -168,15 +161,16 @@ void add_layer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) {
 }
 
 // shoot_ray algorithm for checking safe actions
-std::optional<Point> shoot_ray(const Point& source, const Vector& direction, const AABBTree& tree) {
+std::optional<Point> shoot_ray(const HoledPolygon& w, const Point& source, const Vector& direction, const AABBTree& tree) {
     // Find all intersections of the ray with the polygon boundary
     Ray ray(source, direction);
-    auto result = tree.first_intersection(ray, [&](const auto& primitive_id) {
-        const Segment& boundary = *primitive_id;
+    auto result = tree.first_intersection(ray, [&](const auto& intersection) {
+        const Segment& boundary = *intersection;
         const auto hit = CGAL::intersection(ray, boundary);
+
         if (!hit) return false;
         const Point* ipoint = std::get_if<Point>(&(*hit));
-        return ipoint != nullptr && CGAL::squared_distance(source, *ipoint) < FSCALAR_EPSILON;
+        return ipoint != nullptr && *ipoint == source;
     });
 
     if (!result.has_value()) return std::nullopt;
@@ -191,62 +185,43 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
     Vector d1 = Vector{source.source(), target.target()}
         .transform(Transformation(
                     CGAL::ROTATION, 
-                    convert(boost::multiprecision::sin(theta_max_radians)), 
-                    convert(boost::multiprecision::cos(theta_max_radians))
+                    convert<fscalar>(boost::multiprecision::sin(theta_max_radians)), 
+                    convert<fscalar>(boost::multiprecision::cos(theta_max_radians))
                     ));
     Vector d2 = Vector{source.target(), target.source()}
         .transform(Transformation(
                     CGAL::ROTATION,
-                    convert(boost::multiprecision::sin(-theta_max_radians)),
-                    convert(boost::multiprecision::cos(-theta_max_radians))
+                    convert<fscalar>(boost::multiprecision::sin(-theta_max_radians)),
+                    convert<fscalar>(boost::multiprecision::cos(-theta_max_radians))
                     ));
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
-    if (d1.squared_length() == 0 || d2.squared_length() == 0) {
-        std::cout << "Degenerate vector detected, returning no edge" << std::endl;
-        return std::nullopt;
-    }
+    if (d1.squared_length() == 0 || d2.squared_length() == 0) return std::nullopt;
 
     // A right turn is when the angle between two vectors is greater than pi radians
-    if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) {
-        std::cout << "Vectors are a right turn, returning no edge" << std::endl;
-        return std::nullopt;
-    }
+    if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) return std::nullopt;
 
     // Compute p1 and p2 and check target membership
-    std::optional<Point> p1 = shoot_ray(source.source(), Vector{source.source(), target.target()}, tree);
-    std::optional<Point> p2 = shoot_ray(source.target(), Vector{source.target(), target.source()}, tree);
+    std::optional<Point> p1 = shoot_ray(w, source.source(), Vector{source.source(), target.target()}, tree);
+    std::optional<Point> p2 = shoot_ray(w, source.target(), Vector{source.target(), target.source()}, tree);
     if (
         !p1.has_value() ||
         !p2.has_value() ||
-        !(CGAL::squared_distance(target, *p1) < FSCALAR_EPSILON) ||
-        !(CGAL::squared_distance(target, *p2) < FSCALAR_EPSILON)
-        ) {
-        std::cout << "Raycast doesn't reach target, returning no edge" << std::endl;
-        std::cout << "p1 has value: " << p1.has_value() << std::endl;
-        std::cout << "p2 has value: " << p2.has_value() << std::endl;
-        std::cout << "p1 is on target " << (p1.has_value() ? (CGAL::squared_distance(target, *p1) < FSCALAR_EPSILON) : false) << std::endl;
-        std::cout << "p2 is on target " << (p2.has_value() ? (CGAL::squared_distance(target, *p2) < FSCALAR_EPSILON) : false) << std::endl;
-        return std::nullopt;
-    }
+        !target.has_on(*p1) ||
+        !target.has_on(*p2)
+        ) return std::nullopt;
 
     // Create a quadrilateral with source.source(), source.target(), p1, and p2
-    boost::container::small_vector<Point, 4> quad_points{source.source(), source.target(), *p2, *p1};
+    boost::container::small_vector<Point, 4> quad_points{source.source(), source.target(), *p1, *p2};
     Polygon quadrilateral;
     CGAL::convex_hull_2(quad_points.begin(), quad_points.end(), std::back_inserter(quadrilateral));
     
     // Check if any vertices of w are contained in the quadrilateral
     for (const auto& vertex : w.outer_boundary().vertices()) {
-        if (quadrilateral.has_on_bounded_side(vertex)) {
-            std::cout << "Vertex of polygon is contained in quadrilateral, returning no edge" << std::endl;
-            return std::nullopt;
-        }
+        if (quadrilateral.has_on_bounded_side(vertex)) return std::nullopt;
     }
     for (const auto& hole : w.holes()) {
         for (const auto& vertex : hole.vertices()) {
-            if (quadrilateral.has_on_bounded_side(vertex)) {
-                std::cout << "Vertex of hole is contained in quadrilateral, returning no edge" << std::endl;
-                return std::nullopt;
-            }
+            if (quadrilateral.has_on_bounded_side(vertex)) return std::nullopt;
         }
     }
 
@@ -263,10 +238,9 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
         std::cout << "Adding layer with length " << l << " and offset " << o_max << std::endl;
         add_layer(w, graph, l, o_max);
     }
-    std::cout << "Added " << graph.size() << " nodes to the graph" << std::endl;
+
     // Add the edges
     // Construct an AABB tree for raycast queries
-    std::cout << "Constructing AABB tree for raycast queries" << std::endl;
     std::vector<Segment> segments;
     for (const auto& edge : w.outer_boundary().edges()) segments.push_back(edge);
     for (const auto hole : w.holes()) {
@@ -275,10 +249,9 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
 
     AABBTree tree(segments.begin(), segments.end());
     tree.build();
-    hpscalar theta_max_hp = convert(theta_max);
+    hpscalar theta_max_hp = convert<hpscalar>(theta_max);
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
-            std::cout << "Checking edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;
             auto maybe_edge = has_edge(w, node.segment(), other_node.segment(), theta_max_hp, tree);
             if (maybe_edge.has_value()) {
                 std::cout << "Adding edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;

@@ -38,9 +38,11 @@ std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream
     
     std::list<std::pair<fscalar, fscalar>> parameters;
     for (unsigned int i = 0; i < layer_count; ++i) {
+        std::string l_str, o_max_str;
+        if (!(is >> l_str >> o_max_str)) return {};
         try {
-            fscalar l, o_max;
-            if (!(is >> l >> o_max)) return {};
+            fscalar l{l_str};
+            fscalar o_max{o_max_str};
             if (l <= 0 || o_max <= 0) return {};
             parameters.emplace_back(l, o_max);
         } catch (const std::exception& e) { // Don't know the exact exception, so just catch all
@@ -59,20 +61,6 @@ std::variant<std::pair<fscalar, fscalar>, std::string> read_robot_parameters(std
     fscalar radius;
     if (is >> theta_max >> radius) return std::make_pair(theta_max, radius);
     else return string_repr;
-}
-
-fscalar convert(const hpscalar& x) {
-    mpq_class q;
-    mpfr_get_q(q.get_mpq_t(), x.backend().data());
-    return fscalar(q);
-}
-
-hpscalar convert(const fscalar& x) {
-    const mpq_class q = CGAL::exact(x);
-    hpscalar result;
-    mpfr_set_q(result.backend().data(), q.get_mpq_t(), MPFR_RNDN);
-
-    return result;
 }
 
 std::ostream& operator<<(std::ostream& os, const Graph& g) {
