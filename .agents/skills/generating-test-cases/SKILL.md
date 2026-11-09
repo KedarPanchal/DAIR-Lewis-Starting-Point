@@ -35,10 +35,11 @@ POLYGON((x1 y1, x2 y2, ..., xn yn), (h1_x1 h1_y1, h1_x2 h1_y2, ..., h1_xn h1_yn)
 ```
 
 Where `n` is the number of vertices in the polygon, `m` is the number of holes, 
-and `h1`, `h2`, ..., `hm` are the holes of the polygon. The outer boundary and 
-each hole is described by a list of its vertices in counter-clockwise order, 
-with the first and last vertex being the same to close the polygon. Each vertex 
-is represented by its x and y coordinates, separated by a space.
+and `h1`, `h2`, ..., `hm` are the holes of the polygon. The outer boundary
+is described by a list of its vertices in counter-clockwise order, and the 
+holes are described by a list of their vertices in clockwise order. The first 
+and last vertex of the boundary and holes are the same to close the polygon. 
+Each vertex is represented by its x and y coordinates, separated by a space.
 
 ## Step 2: Discretize the Environment
 

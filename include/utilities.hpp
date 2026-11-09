@@ -2,7 +2,6 @@
 #define UTILITIES_HPP
 
 #include <variant>
-#include <tuple>
 #include <list>
 #include <string>
 #include <istream>
@@ -25,12 +24,11 @@ std::variant<std::pair<fscalar, fscalar>, std::string> read_robot_parameters(std
 // Helper function for converting numeric types
 template <typename To, typename From>
 To convert(const From& x) {
-    std::ostringstream str_representation;
+    std::stringstream str_representation;
     str_representation << std::setprecision(HP_PRECISION) << x;
-    std::istringstream is(str_representation.str());
 
     To result;
-    is >> std::setprecision(HP_PRECISION) >> result;
+    str_representation >> std::setprecision(HP_PRECISION) >> result;
     return result;
 }
 

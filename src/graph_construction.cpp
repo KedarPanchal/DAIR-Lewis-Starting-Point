@@ -78,7 +78,9 @@ CurvedPolygon build_stadium(const Point& source, const Point& target, const fsca
     std::cout << "Source: " << source << ", Target: " << target << ", Radius: " << radius << std::endl;
     // The circle centers are radius distance along the vector from source to target, in both directions
     Vector direction = Vector{source, target};
-    direction = direction / CGAL::sqrt(direction.squared_length()) * radius;
+    // Approximate and remove sqrt requirement from Kernel
+    fscalar length = convert<fscalar>(boost::multiprecision::sqrt(convert<hpscalar>(direction.squared_length())));
+    direction = direction / length * radius;
     Point source_center = source + direction;
     Point target_center = target - direction;
 
@@ -121,7 +123,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
     static size_t node_id = 0;
 
     for (auto eit = w.edges_begin(); eit != w.edges_end(); ++eit) {
-        fscalar length = CGAL::sqrt(eit->squared_length());
+        fscalar length = convert<fscalar>(boost::multiprecision::sqrt(convert<hpscalar>(eit->squared_length())));
         Vector unit_vector = eit->to_vector() / length;
         if (length == l) {
             // Add segment *eit as a node of g
@@ -130,7 +132,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
         } else if (length > l) {
             // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT
             size_t ceiling = boost::multiprecision::ceil(convert<hpscalar>((length - l) / o_max)).convert_to<size_t>();
-            fscalar o = (length - l) / ceiling;
+            fscalar o = (length - l) / convert<fscalar>(ceiling);
             
             Point x1 = eit->source();
             Point x2 = eit->source();
@@ -138,7 +140,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
             Vector shift = unit_vector * o;
             
             // Ceiling is the number of segments to add, so we need to add ceiling segments
-            for(size_t i = 0; i < ceiling; ++i) {
+            for(size_t i = 0; i <= ceiling; ++i) {
                 // x_2 <- x_1 translated l along *eit
                 x2 = x1 + direction;
                 // Add segment x1x2 as a node of g
@@ -161,16 +163,13 @@ void add_layer(const HoledPolygon& w, Graph& g, fscalar l, fscalar o_max) {
 }
 
 // shoot_ray algorithm for checking safe actions
-std::optional<Point> shoot_ray(const HoledPolygon& w, const Point& source, const Vector& direction, const AABBTree& tree) {
+std::optional<Point> shoot_ray(const Point& source, const Vector& direction, const AABBTree& tree) {
     // Find all intersections of the ray with the polygon boundary
     Ray ray(source, direction);
-    auto result = tree.first_intersection(ray, [&](const auto& intersection) {
-        const Segment& boundary = *intersection;
-        const auto hit = CGAL::intersection(ray, boundary);
-
-        if (!hit) return false;
-        const Point* ipoint = std::get_if<Point>(&(*hit));
-        return ipoint != nullptr && *ipoint == source;
+    auto result = tree.first_intersection(ray, [&](const auto& primitive_id) {
+        const Segment& boundary = *primitive_id;
+        if (!boundary.has_on(source)) return false;
+        return CGAL::orientation(boundary.to_vector(), direction) != CGAL::COLLINEAR;
     });
 
     if (!result.has_value()) return std::nullopt;
@@ -201,8 +200,8 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
     if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) return std::nullopt;
 
     // Compute p1 and p2 and check target membership
-    std::optional<Point> p1 = shoot_ray(w, source.source(), Vector{source.source(), target.target()}, tree);
-    std::optional<Point> p2 = shoot_ray(w, source.target(), Vector{source.target(), target.source()}, tree);
+    std::optional<Point> p1 = shoot_ray(source.source(), Vector{source.target(), target.source()}, tree);
+    std::optional<Point> p2 = shoot_ray(source.target(), Vector{target.target(), source.source()}, tree);
     if (
         !p1.has_value() ||
         !p2.has_value() ||
@@ -238,9 +237,10 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
         std::cout << "Adding layer with length " << l << " and offset " << o_max << std::endl;
         add_layer(w, graph, l, o_max);
     }
-
+    std::cout << "Added " << graph.size() << " nodes to the graph" << std::endl;
     // Add the edges
     // Construct an AABB tree for raycast queries
+    std::cout << "Constructing AABB tree for raycast queries" << std::endl;
     std::vector<Segment> segments;
     for (const auto& edge : w.outer_boundary().edges()) segments.push_back(edge);
     for (const auto hole : w.holes()) {
@@ -252,6 +252,7 @@ Graph construct_graph(const HoledPolygon& w, const std::list<std::pair<fscalar, 
     hpscalar theta_max_hp = convert<hpscalar>(theta_max);
     for (auto& [node, edges] : graph) {
         for (auto& [other_node, _] : graph) {
+            std::cout << "Checking edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;
             auto maybe_edge = has_edge(w, node.segment(), other_node.segment(), theta_max_hp, tree);
             if (maybe_edge.has_value()) {
                 std::cout << "Adding edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;

@@ -1,7 +1,8 @@
 #ifndef CGAL_TYPES_HPP
 #define CGAL_TYPES_HPP
 
-#include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Gps_segment_traits_2.h>
 #include <CGAL/Gps_circle_segment_traits_2.h>
 
@@ -20,7 +21,7 @@
 #include <boost/multiprecision/mpfr.hpp>
 
 // Geometric types
-using Kernel = CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
+using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
 using LinearTraits = CGAL::Gps_segment_traits_2<Kernel>;
 using CurvedTraits = CGAL::Gps_circle_segment_traits_2<Kernel>;
 

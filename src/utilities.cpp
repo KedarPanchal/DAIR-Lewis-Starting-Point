@@ -38,11 +38,9 @@ std::list<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream
     
     std::list<std::pair<fscalar, fscalar>> parameters;
     for (unsigned int i = 0; i < layer_count; ++i) {
-        std::string l_str, o_max_str;
-        if (!(is >> l_str >> o_max_str)) return {};
         try {
-            fscalar l{l_str};
-            fscalar o_max{o_max_str};
+            fscalar l, o_max;
+            if (!(is >> l >> o_max)) return {};
             if (l <= 0 || o_max <= 0) return {};
             parameters.emplace_back(l, o_max);
         } catch (const std::exception& e) { // Don't know the exact exception, so just catch all

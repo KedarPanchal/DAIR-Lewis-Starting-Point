@@ -17,10 +17,10 @@ fscalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
     fscalar current_area = 0;
     for (auto edge = polygon.curves_begin(); edge != polygon.curves_end(); ++edge) {
         // Convert from CGAL::Sqrt_extension to fscalar using the formula a0 + a1 * sqrt(root)
-        fscalar x0 = edge->source().x().a0() + edge->source().x().a1() * CGAL::sqrt(edge->source().x().root());
-        fscalar y0 = edge->source().y().a0() + edge->source().y().a1() * CGAL::sqrt(edge->source().y().root());
-        fscalar x1 = edge->target().x().a0() + edge->target().x().a1() * CGAL::sqrt(edge->target().x().root());
-        fscalar y1 = edge->target().y().a0() + edge->target().y().a1() * CGAL::sqrt(edge->target().y().root());
+        fscalar x0 = convert<fscalar>(edge->source().x());
+        fscalar y0 = convert<fscalar>(edge->source().y());
+        fscalar x1 = convert<fscalar>(edge->target().x());
+        fscalar y1 = convert<fscalar>(edge->target().y());
         
         // Shoelace formula for linear edges, area of circular segment for curved edges
         if (edge->is_linear()) current_area += 0.5 * (x0 * y1 - x1 * y0);
