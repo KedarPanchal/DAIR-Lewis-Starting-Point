@@ -13,6 +13,9 @@ private:
     sqlite3_stmt* insert_statement;
     sqlite3_stmt* select_statement;
 
+    void setup_table();
+    void prepare_statements();
+
 public:
     Cache(const std::string& name);
     Cache(const Cache&) = delete;
