@@ -41,6 +41,7 @@ add_executable(robot_start_position
     src/coverage_path.cpp
     src/start_nodes.cpp
     src/visualization.cpp
+    src/cache.cpp
 )
 
 add_executable(validate_parameters
