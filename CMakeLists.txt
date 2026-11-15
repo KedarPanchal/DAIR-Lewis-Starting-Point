@@ -31,6 +31,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGL)
 find_package(CGAL REQUIRED COMPONENTS Qt6)
 find_package(Boost REQUIRED)
 find_package(MPFR REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 # Add the executable target
 add_executable(robot_start_position 
@@ -57,6 +58,7 @@ foreach (target IN LISTS ALL_TARGETS)
         CGAL::CGAL_Qt6 
         Boost::boost 
         ${MPFR_LIBRARIES}
+        SQLite::SQLite3
     )
 endforeach()
 
