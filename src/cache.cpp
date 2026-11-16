@@ -7,10 +7,63 @@
 #include <iostream>
 #include <iomanip>
 #include <ranges>
+#include <functional>
 
 #include <sqlite3.h>
 
 #include "cgal_types.hpp"
+
+void Cache::teardown() {
+    int finalize_insert_result = sqlite3_finalize(this->insert_statement);
+    if (finalize_insert_result != SQLITE_OK) {
+        std::cerr 
+            << "Failed to finalize insert statement: " 
+            << sqlite3_errmsg(this->db) 
+            << std::endl;
+    }
+
+    int finalize_select_result = sqlite3_finalize(this->select_statement);
+    if (finalize_select_result != SQLITE_OK) {
+        std::cerr 
+            << "Failed to finalize select statement: " 
+            << sqlite3_errmsg(this->db) 
+            << std::endl;
+    }
+
+    int close_result = sqlite3_close(this->db);
+    if (close_result != SQLITE_OK) {
+        std::cerr 
+            << "Failed to close database: " 
+            << sqlite3_errmsg(this->db) 
+            << std::endl;
+    }
+}
+
+void Cache::handle_sqlite_error(
+        int result_code, 
+        const std::string& error_message
+        ) {
+    if (result_code != SQLITE_OK) {
+        std::string error_msg = error_message 
+            + ": " 
+            + std::string(sqlite3_errmsg(this->db));
+        this->teardown();
+        throw std::runtime_error(error_msg);
+    }
+}
+
+void Cache::handle_sqlite_error(
+        const std::string& error_message, 
+        std::function<bool()> condition
+        ) {
+    if (condition()) {
+        std::string error_msg = error_message 
+            + ": " 
+            + std::string(sqlite3_errmsg(this->db));
+        this->teardown();
+        throw std::runtime_error(error_msg);
+    }
+}
 
 void Cache::setup_table() {
     // Create the coverage_areas table if it doesn't exist
@@ -27,17 +80,17 @@ void Cache::setup_table() {
         &create_table_statement, 
         nullptr
     );
-    if (create_table_result != SQLITE_OK) {
-        throw std::runtime_error("Failed to prepare create table statement: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(
+        create_table_result, 
+        "Failed to prepare create table statement"
+    );
     int step_result = sqlite3_step(create_table_statement);
-    if (step_result != SQLITE_DONE) {
-        throw std::runtime_error("Failed to create table: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(step_result, "Failed to create table");
     int finalize_result = sqlite3_finalize(create_table_statement);
-    if (finalize_result != SQLITE_OK) {
-        throw std::runtime_error("Failed to finalize create table statement: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(
+        finalize_result, 
+        "Failed to finalize create table statement"
+    );
 }
 
 void Cache::prepare_statements() {
@@ -50,9 +103,10 @@ void Cache::prepare_statements() {
         &this->insert_statement,
         nullptr
     );
-    if (insert_result != SQLITE_OK) {
-        throw std::runtime_error("Failed to prepare insert statement: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(
+        insert_result, 
+        "Failed to prepare insert statement"
+    );
     
     // Prepare the select statement
     std::string select_polygon_set = "SELECT psetstring, pcount FROM coverage_areas WHERE id = ?;";
@@ -63,9 +117,10 @@ void Cache::prepare_statements() {
         &this->select_statement,
         nullptr
     );
-    if (select_result != SQLITE_OK) {
-        throw std::runtime_error("Failed to prepare select statement: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(
+        select_result, 
+        "Failed to prepare select statement"
+    );
 }
 
 Cache::Cache(const std::string& name) {
@@ -76,15 +131,13 @@ Cache::Cache(const std::string& name) {
         SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX,
         nullptr
     );
-    if (open_result != SQLITE_OK) {
-        throw std::runtime_error("Failed to open database: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(open_result, "Failed to open database");
 
     this->setup_table();
     this->prepare_statements();    
 }
 
-void Cache::insert_coverage_area(const PolygonSet& polygon_set) {
+sqlite3_int64 Cache::insert_coverage_area(const PolygonSet& polygon_set) {
     std::ostringstream pset_string;
     pset_string << std::setprecision(HP_PRECISION);
     
@@ -105,46 +158,54 @@ void Cache::insert_coverage_area(const PolygonSet& polygon_set) {
         -1,
         SQLITE_TRANSIENT
     );
-    if (bind_result != SQLITE_OK) {
-        throw std::runtime_error("Failed to bind polygon set string: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(
+        bind_result, 
+        "Failed to bind polygon set string"
+    );
     bind_result = sqlite3_bind_int(
         this->insert_statement,
         2,
         static_cast<int>(polygons_with_holes.size())
     );
-    if (bind_result != SQLITE_OK) {
-        throw std::runtime_error("Failed to bind polygon count: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(bind_result, "Failed to bind polygon count");
     
     // Execute the insert statement
     int step_result = sqlite3_step(this->insert_statement);
-    if (step_result != SQLITE_DONE) {
-        throw std::runtime_error("Failed to execute insert statement: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(
+        "Failed to execute insert statement", 
+        [step_result]() { return step_result != SQLITE_DONE; }
+    );
+
+    return sqlite3_last_insert_rowid(this->db);
 }
 
 PolygonSet Cache::get_coverage_area(size_t id) {
     // Prepare select statement
-    int bind_result = sqlite3_bind_int(this->select_statement, 1, static_cast<int>(id));
-    if (bind_result != SQLITE_OK) {
-        throw std::runtime_error("Failed to bind id: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    int bind_result = sqlite3_bind_int(
+        this->select_statement, 
+        1, 
+        static_cast<int>(id)
+    );
+    this->handle_sqlite_error(
+        bind_result, 
+        "Failed to bind id for select statement"
+    );
     
     // Execute the select statement
     // There should only be one row returned, since id is a primary key
     int step_result = sqlite3_step(this->select_statement);
-    if (step_result != SQLITE_ROW) {
-        throw std::runtime_error("Failed to execute select statement: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(step_result, "Failed to execute select statement");
     const char* pset_string = reinterpret_cast<const char*>(sqlite3_column_text(this->select_statement, 1));
-    if (!pset_string) {
-        throw std::runtime_error("Failed to retrieve polygon set string: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(
+        "Failed to retrieve polygon set string", 
+        [pset_string]() { return pset_string == nullptr; }
+    );
+    
     int pcount = sqlite3_column_int(this->select_statement, 2);
-    if (pcount <= 0) {
-        throw std::runtime_error("Invalid polygon count retrieved: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(
+        "Failed to retrieve polygon count", 
+        [pcount]() { return pcount <= 0; }
+    );
     
     // Process results
     std::istringstream pset_stream(pset_string);
@@ -154,9 +215,11 @@ PolygonSet Cache::get_coverage_area(size_t id) {
     while (std::getline(pset_stream, line)) {
         std::istringstream line_stream(line);
         CurvedPolygon polygon;
-        if (!(line_stream >> polygon)) {
-            throw std::runtime_error("Failed to parse polygon from string: " + line);
-        }
+        this->handle_sqlite_error(
+            "Failed to parse polygon from string: " + line, 
+            [&line_stream, &polygon]() { return !(line_stream >> polygon); }
+        );
+        
         polygons_with_holes.push_back(polygon); 
     }
 
@@ -165,26 +228,14 @@ PolygonSet Cache::get_coverage_area(size_t id) {
 
     // Step through the select statement again to allow for future reuse
     step_result = sqlite3_step(this->select_statement);
-    if (step_result != SQLITE_DONE) {
-        throw std::runtime_error("Failed to step through select statement: " + std::string(sqlite3_errmsg(this->db)));
-    }
+    this->handle_sqlite_error(
+        "Failed to step through select statement", 
+        [step_result]() { return step_result != SQLITE_DONE; }
+    );
 
     return result;
 }
 
 Cache::~Cache() {
-    int close_result = sqlite3_close(this->db);
-    if (close_result != SQLITE_OK) {
-        std::cerr << "Failed to close database: " << sqlite3_errmsg(this->db) << std::endl;
-    }
-
-    int finalize_insert_result = sqlite3_finalize(this->insert_statement);
-    if (finalize_insert_result != SQLITE_OK) {
-        std::cerr << "Failed to finalize insert statement: " << sqlite3_errmsg(this->db) << std::endl;
-    }
-
-    int finalize_select_result = sqlite3_finalize(this->select_statement);
-    if (finalize_select_result != SQLITE_OK) {
-        std::cerr << "Failed to finalize select statement: " << sqlite3_errmsg(this->db) << std::endl;
-    }
+    this->teardown();
 }
