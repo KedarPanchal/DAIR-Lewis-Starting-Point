@@ -28,93 +28,6 @@ size_t hash_value(const Node& node) {
     return std::hash<size_t>()(node.ID());
 }
 
-// Code to build the edges of a stadium polygon
-boost::container::small_vector<Curve, 4> build_standard_stadium(Point source_center, Point target_center, fscalar radius, const Vector& direction) {
-    CGAL::Circle_2<Kernel> source_circle(source_center, radius * radius, CGAL::COUNTERCLOCKWISE);
-    CGAL::Circle_2<Kernel> target_circle(target_center, radius * radius, CGAL::COUNTERCLOCKWISE);
-
-    // Construct the 4 points needed to construct the rectangle
-    Point source1 = source_center + direction.perpendicular(CGAL::CLOCKWISE);
-    Point source2 = source_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
-    Point target1 = target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
-    Point target2 = target_center + direction.perpendicular(CGAL::CLOCKWISE);
-    std::cout << "Stadium points: " << source1 << ", " << source2 << ", " << target1 << ", " << target2 << std::endl;
-    // Place them all into a vector and sort them in counterclockwise order
-    boost::container::small_vector<Point, 4> rectangle_points{source1, source2, target1, target2};
-    boost::container::small_vector<Point, 4> sorted_rectangle_points;
-    CGAL::convex_hull_2(rectangle_points.begin(), rectangle_points.end(), std::back_inserter(sorted_rectangle_points));
-
-    // If both points are a source or target, construct an arc in counterclockwise order, otherwise construct a line segment
-    boost::container::small_vector<Curve, 4> curves;
-    for (size_t i = 0; i < 4; ++i) {
-        size_t next = (i + 1)  % 4;
-        if (
-            (sorted_rectangle_points[i] == source1 || sorted_rectangle_points[i] == source2) &&
-            (sorted_rectangle_points[next] == source1 || sorted_rectangle_points[next] == source2)
-            ) {
-            CurvedTraits::Point_2 source_point(sorted_rectangle_points[i].x(), sorted_rectangle_points[i].y());
-            CurvedTraits::Point_2 target_point(sorted_rectangle_points[next].x(), sorted_rectangle_points[next].y());
-            curves.emplace_back(source_circle, source_point, target_point);
-        } else if (
-            (sorted_rectangle_points[i] == target1 || sorted_rectangle_points[i] == target2) &&
-            (sorted_rectangle_points[next] == target1 || sorted_rectangle_points[next] == target2)
-            ) {
-            CurvedTraits::Point_2 source_point(sorted_rectangle_points[i].x(), sorted_rectangle_points[i].y());
-            CurvedTraits::Point_2 target_point(sorted_rectangle_points[next].x(), sorted_rectangle_points[next].y());
-            curves.emplace_back(target_circle, source_point, target_point);
-        } else {
-            curves.emplace_back(sorted_rectangle_points[i], sorted_rectangle_points[next]);
-        }
-    }
-
-    return curves;
-}
-
-boost::container::small_vector<Curve, 4> build_circular_stadium(Point center, fscalar radius) {
-    CGAL::Circle_2<Kernel> circle(center, radius * radius, CGAL::COUNTERCLOCKWISE);
-    return {Curve(circle)};
-}
-
-CurvedPolygon build_stadium(const Point& source, const Point& target, const fscalar& radius) {
-    std::cout << "Source: " << source << ", Target: " << target << ", Radius: " << radius << std::endl;
-    // The circle centers are radius distance along the vector from source to target, in both directions
-    Vector direction = Vector{source, target};
-    direction = direction / CGAL::sqrt(direction.squared_length()) * radius;
-    Point source_center = source + direction;
-    Point target_center = target - direction;
-
-    // If source and target centers are the same, then the stadium is just a circle
-    boost::container::small_vector<Curve, 4> curves = source_center == target_center 
-        ? build_circular_stadium(source_center, radius) 
-        : build_standard_stadium(source_center, target_center, radius, direction);
-    
-    CGAL::Arrangement_2<CurvedTraits> arr;
-    CGAL::insert(arr, curves.begin(), curves.end());
-    
-    // Find first bounded face in the arrangement and extract its boundary edges to construct a CurvedPolygon
-    CGAL::Arrangement_2<CurvedTraits>::Face_const_iterator face = arr.unbounded_face();
-    for (face = arr.faces_begin(); face != arr.faces_end(); ++face) {
-        if (!face->is_unbounded()) break;
-    }
-    boost::container::small_vector<CurvedTraits::X_monotone_curve_2, 4> stadium_edges;
-    CGAL::Arrangement_2<CurvedTraits>::Ccb_halfedge_const_circulator circ = face->outer_ccb();
-    CGAL::Arrangement_2<CurvedTraits>::Ccb_halfedge_const_circulator start = circ;
-    do {
-        stadium_edges.push_back(circ->curve());
-    } while (++circ != start);
-
-    return CurvedPolygon(stadium_edges.begin(), stadium_edges.end());
-}
-
-PolygonSet compute_coverage(const Segment& source, const Segment& target, const fscalar& radius) {
-    auto stadium1 = build_stadium(source.source(), target.target(), radius);
-    auto stadium2 = build_stadium(source.target(), target.source(), radius);
-    
-    PolygonSet coverage{std::move(stadium1)};
-    coverage.intersection(std::move(stadium2));
-    return coverage;
-}
-
 // -- GRAPH CONSTRUCTION ALGORITHM --------------------------------------------
 
 // Adds layers around the boundary of a single polygon
@@ -281,7 +194,7 @@ Graph construct_graph(
             auto maybe_edge = has_edge(w, node.segment(), other_node.segment(), theta_max_hp, tree);
             if (maybe_edge.has_value()) {
                 std::cout << "Adding edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;
-                sqlite3_int64 coverage_id = cache.insert_coverage_area(compute_coverage(node.segment(), other_node.segment(), radius));
+                sqlite3_int64 coverage_id = cache.insert_coverage_area(node.segment(), other_node.segment(), radius);
                 edges.emplace_back(other_node, maybe_edge.value(), coverage_id);
             }
         }
