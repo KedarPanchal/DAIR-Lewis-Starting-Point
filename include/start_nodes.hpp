@@ -6,10 +6,10 @@
 
 #include "cgal_types.hpp"
 #include "graph_construction.hpp"
+#include "cache.hpp"
 
 using SCC = std::tuple<Graph, PolygonSet, fscalar>;
 
-std::vector<SCC> scc_areas(const Graph& g);
-std::vector<SCC> greedy_scc_cover(const std::vector<SCC>& areas, size_t n);
+std::vector<SCC> scc_areas(const Graph& g, Cache& cache);
 
 #endif

@@ -59,7 +59,7 @@ foreach (target IN LISTS ALL_TARGETS)
         CGAL::CGAL_Qt6 
         Boost::boost 
         ${MPFR_LIBRARIES}
-        SQLite::SQLite3
+        SQLite3::SQLite3
     )
 endforeach()
 

@@ -6,11 +6,14 @@
 #include <optional>
 #include <tuple>
 
+#include <sqlite3.h>
+
 #include <CGAL/squared_distance_2.h>
 
 #include <boost/container/small_vector.hpp>
 
 #include "cgal_types.hpp"
+#include "cache.hpp"
 
 // Graph node, with numeric ID for Johnson's algorithm
 class Node {
@@ -42,7 +45,7 @@ namespace std {
 size_t hash_value(const Node& node);
 
 // Adjacency list representation of the graph
-using Graph = std::unordered_map<Node, std::vector<std::tuple<Node, Vector, PolygonSet>>>;
+using Graph = std::unordered_map<Node, std::vector<std::tuple<Node, Vector, sqlite3_int64>>>;
 
 void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max);
 
@@ -52,6 +55,6 @@ std::optional<Point> shoot_ray(const HoledPolygon& w, const Point& source, const
 
 std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, const Segment& target, hpscalar theta_max, const AABBTree& tree);
 
-Graph construct_graph(const HoledPolygon& w, const std::vector<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius);
+Graph construct_graph(const HoledPolygon& w, const std::vector<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius, Cache& cache);
 
 #endif

@@ -7,6 +7,7 @@
 
 #include "cgal_types.hpp"
 #include "utilities.hpp"
+#include "cache.hpp"
 #include "graph_construction.hpp"
 #include "start_nodes.hpp"
 #include "visualization.hpp"
@@ -35,12 +36,15 @@ int main() {
     }
     fscalar theta_max = std::get<std::pair<fscalar, fscalar>>(maybe_robot_parameters).first;
     fscalar radius = std::get<std::pair<fscalar, fscalar>>(maybe_robot_parameters).second;
+
+    // Create the cache for graph edges
+    Cache cache("graph_cache.db");
     
     // Construct the graph
-    Graph graph = construct_graph(wall_space, parameters, theta_max, radius);
+    Graph graph = construct_graph(wall_space, parameters, theta_max, radius, cache);
     
     // Find best starting position(s)
-    std::vector<SCC> areas = scc_areas(graph);
+    std::vector<SCC> areas = scc_areas(graph, cache);
     visualize(wall_space, areas);
     return 0;
 }

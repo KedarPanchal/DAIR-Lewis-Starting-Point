@@ -1,10 +1,11 @@
 #include "graph_construction.hpp"
 
 #include <vector>
-#include <unordered_map>
 #include <optional>
 #include <iterator>
 #include <tuple>
+
+#include <sqlite3.h>
 
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/Circle_2.h>
@@ -18,6 +19,7 @@
 
 #include "cgal_types.hpp"
 #include "utilities.hpp"
+#include "cache.hpp"
 
 // -- HELPER FUNCTIONS --------------------------------------------------------
 
@@ -125,7 +127,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
         if (length == l) {
             // Add segment *eit as a node of g
             Node node{node_id++, *eit};
-            g[node] = std::vector<std::tuple<Node, Vector, PolygonSet>>{};
+            g[node] = std::vector<std::tuple<Node, Vector, sqlite3_int64>>{};
         } else if (length > l) {
             // Ceiling value since CGAL doesn't expose a ceil function for Kernel::FT
             size_t ceiling = boost::multiprecision::ceil(convert<hpscalar>((length - l) / o_max)).convert_to<size_t>();
@@ -142,7 +144,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
                 x2 = x1 + direction;
                 // Add segment x1x2 as a node of g
                 Node node{node_id++, Segment(x1, x2)};
-                g[node] = std::vector<std::tuple<Node, Vector, PolygonSet>>{};
+                g[node] = std::vector<std::tuple<Node, Vector, sqlite3_int64>>{};
                 // x_1 <- x_1 translated o along *eit
                 x1 += shift;
             }
@@ -249,7 +251,13 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
     return CGAL::bisector(d1_line, d2_line).to_vector();
 }
 
-Graph construct_graph(const HoledPolygon& w, const std::vector<std::pair<fscalar, fscalar>>& parameters, fscalar theta_max, fscalar radius) {
+Graph construct_graph(
+        const HoledPolygon& w, 
+        const std::vector<std::pair<fscalar, fscalar>>& parameters, 
+        fscalar theta_max, 
+        fscalar radius, 
+        Cache& cache
+        ) {
     Graph graph;
     // Add the nodes
     for (const auto& [l, o_max] : parameters) {
@@ -273,7 +281,8 @@ Graph construct_graph(const HoledPolygon& w, const std::vector<std::pair<fscalar
             auto maybe_edge = has_edge(w, node.segment(), other_node.segment(), theta_max_hp, tree);
             if (maybe_edge.has_value()) {
                 std::cout << "Adding edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;
-                edges.emplace_back(other_node, maybe_edge.value(), compute_coverage(node.segment(), other_node.segment(), radius));
+                sqlite3_int64 coverage_id = cache.insert_coverage_area(compute_coverage(node.segment(), other_node.segment(), radius));
+                edges.emplace_back(other_node, maybe_edge.value(), coverage_id);
             }
         }
     }

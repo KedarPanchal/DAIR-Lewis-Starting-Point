@@ -3,10 +3,13 @@
 #include <stack>
 #include <tuple>
 
+#include <sqlite3.h>
+
 #include "cgal_types.hpp"
 #include "utilities.hpp"
 #include "start_nodes.hpp"
 #include "graph_construction.hpp"
+#include "cache.hpp"
 
 // -- GEOMETRIC HELPER FUNCTIONS ----------------------------------------------
 
@@ -58,10 +61,13 @@ fscalar area(const PolygonSet& ps) {
 }
 
 // Compute area of all edges in a strongly connected component
-PolygonSet scc_coverage(const Graph& scc) {
+PolygonSet scc_coverage(const Graph& scc, Cache& cache) {
     PolygonSet ccr;
     for (const auto& [node, neighbors] : scc) {
-        for (const auto& [_, _, ccr_prime] : neighbors) ccr.join(ccr_prime);
+        for (const auto& [_, _, ccr_id] : neighbors) {
+            PolygonSet ccr_prime = cache.get_coverage_area(ccr_id);
+            ccr.join(std::move(ccr_prime));
+        }
     }
 
     return ccr;
@@ -90,7 +96,7 @@ Graph transpose(const Graph& g) {
     Graph g_prime;
     for (const auto& [node, neighbors] : g) {
         // Add nodes from the getgo to handle isolated nodes
-        if (g_prime.find(node) == g_prime.end()) g_prime.try_emplace(node, std::vector<std::tuple<Node, Vector, PolygonSet>>{});
+        if (g_prime.find(node) == g_prime.end()) g_prime.try_emplace(node, std::vector<std::tuple<Node, Vector, sqlite3_int64>>{});
         for (const auto& [neighbor, vec, ccr] : neighbors) {
             g_prime[neighbor].emplace_back(node, vec, ccr);
         }
@@ -109,7 +115,7 @@ void find_strongly_connected_component(
     visited.insert(node);
     // Add the node to the strongly connected component
     // This is done in case a node has no outgoing edges
-    scc.try_emplace(node, std::vector<std::tuple<Node, Vector, PolygonSet>>{});
+    scc.try_emplace(node, std::vector<std::tuple<Node, Vector, sqlite3_int64>>{});
     for (const auto& [neighbor, vec, ccr] : g.at(node)) {
         if (visited.find(neighbor) == visited.end()) {
             scc[neighbor].emplace_back(node, vec, ccr);
@@ -123,7 +129,7 @@ void find_strongly_connected_component(
 // Implement Kosaraju's algorithm for finding strongly connected components of a directed graph
 // The best starting point(s) is the SCC that covers the most area
 // TODO: Eventually replace this with Tarjan's algorithm for better performance
-std::vector<SCC> scc_areas(const Graph& g) {
+std::vector<SCC> scc_areas(const Graph& g, Cache& cache) {
     std::stack<Node> stack;
     std::unordered_set<Node> visited;
     std::vector<std::tuple<Graph, PolygonSet, fscalar>> areas;
@@ -148,7 +154,7 @@ std::vector<SCC> scc_areas(const Graph& g) {
         find_strongly_connected_component(g_prime, current_node, visited, scc);
         if (scc.empty()) continue;
 
-        PolygonSet ccr = scc_coverage(scc);
+        PolygonSet ccr = scc_coverage(scc, cache);
         fscalar current_area = area(ccr);
         std::cout << "Found SCC with area " << current_area << std::endl;
         areas.emplace_back(std::move(scc), std::move(ccr), current_area);

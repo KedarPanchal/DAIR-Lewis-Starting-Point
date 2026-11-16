@@ -2,10 +2,10 @@
 #define GRAPH_ALGORITHMS_HPP
 
 #include <unordered_set>
-#include <list>
 
 #include "cgal_types.hpp"
 #include "graph_construction.hpp"
+#include "cache.hpp"
 
 // Since all weights are 1, just use -1 to represent infinity for simplicity
 #define INF -1
@@ -20,10 +20,8 @@ struct pair_hash {
     }
 };
 
-PolygonSet compute_coverage(const Node& source, const Node& target, const Graph& g);
+PolygonSet compute_coverage(const Node& source, const Node& target, const Graph& g, Cache& cache);
 
 std::unordered_set<std::pair<Node, Node>, pair_hash> compute_coverage_edges(const Node& source, PolygonSet& CCR, const Graph& g);
-
-std::list<std::pair<Graph, fscalar>> scc_areas(const Graph& g);
 
 #endif
