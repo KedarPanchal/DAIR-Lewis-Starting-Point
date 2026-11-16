@@ -377,19 +377,19 @@ PolygonSet Cache::get_coverage_area(size_t id) {
         "Failed to execute select statement", 
         [step_result]() { return step_result != SQLITE_ROW; }
     );
-    const char* source_string = reinterpret_cast<const char*>(sqlite3_column_text(this->select_statement, 1));
+    const char* source_string = reinterpret_cast<const char*>(sqlite3_column_text(this->select_statement, 0));
     this->handle_sqlite_error(
-        "Failed to retrieve polygon set string", 
+        "Failed to retrieve source segment string", 
         [source_string]() { return source_string == nullptr; }
     );
-    const char* target_string = reinterpret_cast<const char*>(sqlite3_column_text(this->select_statement, 2));
+    const char* target_string = reinterpret_cast<const char*>(sqlite3_column_text(this->select_statement, 1));
     this->handle_sqlite_error(
-        "Failed to retrieve polygon set string", 
+        "Failed to retrieve target segment string", 
         [target_string]() { return target_string == nullptr; }
     );
-    const char* radius_string = reinterpret_cast<const char*>(sqlite3_column_text(this->select_statement, 3));
+    const char* radius_string = reinterpret_cast<const char*>(sqlite3_column_text(this->select_statement, 2));
     this->handle_sqlite_error(
-        "Failed to retrieve polygon set string", 
+        "Failed to retrieve radius string", 
         [radius_string]() { return radius_string == nullptr; }
     );
     
