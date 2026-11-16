@@ -2,11 +2,9 @@
 
 #include <string>
 #include <sstream>
-#include <vector>
 #include <stdexcept>
 #include <iostream>
 #include <iomanip>
-#include <ranges>
 #include <functional>
 
 #include <sqlite3.h>
@@ -28,6 +26,7 @@ void Cache::teardown() {
             << sqlite3_errmsg(this->db) 
             << std::endl;
     }
+    this->insert_statement = nullptr;
 
     int finalize_select_result = sqlite3_finalize(this->select_statement);
     if (finalize_select_result != SQLITE_OK) {
@@ -36,6 +35,7 @@ void Cache::teardown() {
             << sqlite3_errmsg(this->db) 
             << std::endl;
     }
+    this->select_statement = nullptr;
 
     int close_result = sqlite3_close(this->db);
     if (close_result != SQLITE_OK) {
@@ -44,6 +44,7 @@ void Cache::teardown() {
             << sqlite3_errmsg(this->db) 
             << std::endl;
     }
+    this->db = nullptr;
 }
 
 void Cache::handle_sqlite_error(
@@ -74,12 +75,36 @@ void Cache::handle_sqlite_error(
 
 void Cache::setup_table() {
     // Create the coverage_areas table if it doesn't exist
+    sqlite3_stmt* drop_table_statement;
+    std::string drop_table = "DROP TABLE IF EXISTS coverage_areas;";
+    int drop_table_result = sqlite3_prepare_v2(
+        this->db, 
+        drop_table.c_str(), 
+        -1, 
+        &drop_table_statement, 
+        nullptr
+    );
+    this->handle_sqlite_error(
+        drop_table_result,
+        "Failed to prepare drop table statement"
+    );
+    int step_result = sqlite3_step(drop_table_statement);
+    this->handle_sqlite_error(
+        "Failed to drop table", 
+        [step_result]() { return step_result != SQLITE_DONE; }
+    );
+    int finalize_result = sqlite3_finalize(drop_table_statement);
+    this->handle_sqlite_error(
+        finalize_result, 
+        "Failed to finalize drop table statement"
+    );
+
     sqlite3_stmt* create_table_statement;
     std::string create_table = "CREATE TABLE IF NOT EXISTS coverage_areas ("
                                     "id INTEGER PRIMARY KEY,"
                                     "source_segment TEXT NOT NULL,"
                                     "target_segment TEXT NOT NULL,"
-                                    "radius TEXT NOT NULL,"
+                                    "radius TEXT NOT NULL"
                                 ");";
     int create_table_result = sqlite3_prepare_v2(
         this->db, 
@@ -89,12 +114,15 @@ void Cache::setup_table() {
         nullptr
     );
     this->handle_sqlite_error(
-        create_table_result, 
+        create_table_result,
         "Failed to prepare create table statement"
     );
-    int step_result = sqlite3_step(create_table_statement);
-    this->handle_sqlite_error(step_result, "Failed to create table");
-    int finalize_result = sqlite3_finalize(create_table_statement);
+    step_result = sqlite3_step(create_table_statement);
+    this->handle_sqlite_error(
+        "Failed to create table",
+        [step_result]() { return step_result != SQLITE_DONE; }
+    );
+    finalize_result = sqlite3_finalize(create_table_statement);
     this->handle_sqlite_error(
         finalize_result, 
         "Failed to finalize create table statement"

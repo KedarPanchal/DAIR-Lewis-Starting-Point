@@ -4,3 +4,6 @@ build/**
 
 # MacOS Artifacts
 **/.DS_Store
+
+#SQLite Artifacts
+*.db
