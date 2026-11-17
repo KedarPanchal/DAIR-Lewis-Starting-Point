@@ -197,7 +197,8 @@ std::vector<SCC> scc_areas(const Graph& g, Cache& cache) {
 
         Graph scc;
         find_strongly_connected_component(g_prime, current_node, visited, scc);
-        if (scc.empty()) {
+        if (scc.empty() || scc.size() == 1) {
+            std::cout << "SCC is empty or has only one node, skipping\n";
             continue;
         }
 
