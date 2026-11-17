@@ -1,13 +1,13 @@
 #include "utilities.hpp"
 
-
-#include <variant>
-#include <tuple>
-#include <vector>
-#include <string>
+#include <exception>
 #include <istream>
 #include <sstream>
+#include <string>
+#include <tuple>
 #include <utility>
+#include <variant>
+#include <vector>
 
 #include <CGAL/IO/WKT.h>
 
@@ -19,14 +19,21 @@ std::variant<HoledPolygon, std::string> read_polygon(std::istream& in) {
     std::string string_repr;
     std::getline(in, string_repr);
     std::istringstream is{string_repr};
+
     // Attempt to parse the polygon
     HoledPolygon polygon;
-    // If successfully parsed, return the polygon; otherwise, return the original string
-    if (CGAL::IO::read_polygon_WKT(is, polygon)) return polygon;
-    else return string_repr;
+
+    // If successfully parsed, return the polygon; otherwise, return the
+    // original string
+    if (CGAL::IO::read_polygon_WKT(is, polygon)) {
+        return polygon;
+    } else {
+        return string_repr;
+    }
 }
 
-std::vector<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istream& in) {
+std::vector<std::pair<fscalar, fscalar>> read_wallpapering_parameters(
+    std::istream& in) {
     // Extract the line of parameters
     std::string parameter_line;
     std::getline(in, parameter_line);
@@ -34,18 +41,27 @@ std::vector<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istre
 
     // Extract the number of parameter pairs (layers)
     unsigned int layer_count;
-    if (!(is >> layer_count)) return {};
-    
+    if (!(is >> layer_count)) {
+        return {};
+    }
+
     std::vector<std::pair<fscalar, fscalar>> parameters;
     for (unsigned int i = 0; i < layer_count; ++i) {
-        std::string l_str, o_max_str;
-        if (!(is >> l_str >> o_max_str)) return {};
+        std::string l_str;
+        std::string o_max_str;
+        if (!(is >> l_str >> o_max_str)) {
+            return {};
+        }
+
         try {
             fscalar l{l_str};
             fscalar o_max{o_max_str};
-            if (l <= 0 || o_max <= 0) return {};
+            if (l <= 0 || o_max <= 0) {
+                return {};
+            }
             parameters.emplace_back(l, o_max);
-        } catch (const std::exception& e) { // Don't know the exact exception, so just catch all
+        } catch (const std::exception& e) {
+            // Don't know the exact exception, so just catch all
             return {};
         }
     }
@@ -53,14 +69,19 @@ std::vector<std::pair<fscalar, fscalar>> read_wallpapering_parameters(std::istre
     return parameters;
 }
 
-std::variant<std::pair<fscalar, fscalar>, std::string> read_robot_parameters(std::istream& in) {
+std::variant<std::pair<fscalar, fscalar>, std::string>
+read_robot_parameters(std::istream& in) {
     std::string string_repr;
     std::getline(in, string_repr);
     std::istringstream is{string_repr};
+
     fscalar theta_max;
     fscalar radius;
-    if (is >> theta_max >> radius) return std::make_pair(theta_max, radius);
-    else return string_repr;
+    if (is >> theta_max >> radius) {
+        return std::make_pair(theta_max, radius);
+    } else {
+        return string_repr;
+    }
 }
 
 std::ostream& operator<<(std::ostream& os, const Graph& g) {
@@ -70,5 +91,6 @@ std::ostream& operator<<(std::ostream& os, const Graph& g) {
             os << u.ID() << " ";
         }
     }
+
     return os;
 }

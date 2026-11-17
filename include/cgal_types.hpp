@@ -20,7 +20,8 @@
 #include <boost/multiprecision/mpfr.hpp>
 
 // Geometric types
-using Kernel = CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
+using Kernel =
+    CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
 using LinearTraits = CGAL::Gps_segment_traits_2<Kernel>;
 using CurvedTraits = CGAL::Gps_circle_segment_traits_2<Kernel>;
 
@@ -37,11 +38,17 @@ using Transformation = CGAL::Aff_transformation_2<Kernel>;
 
 // Complex types
 using PolygonSet = CGAL::General_polygon_set_2<CurvedTraits>;
-using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits_2<Kernel, CGAL::AABB_segment_primitive_2<Kernel, std::vector<Segment>::const_iterator>>>;
+using AABBTree = CGAL::AABB_tree<
+    CGAL::AABB_traits_2<
+        Kernel,
+        CGAL::AABB_segment_primitive_2<
+            Kernel,
+            std::vector<Segment>::const_iterator>>>;
 
 // Numeric types
 constexpr unsigned int HP_PRECISION = 1000;
 using fscalar = Kernel::FT;
-using hpscalar = boost::multiprecision::number<boost::multiprecision::mpfr_float_backend<HP_PRECISION>>; 
+using hpscalar = boost::multiprecision::number<
+    boost::multiprecision::mpfr_float_backend<HP_PRECISION>>;
 
 #endif

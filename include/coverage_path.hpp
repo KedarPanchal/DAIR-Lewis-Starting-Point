@@ -2,6 +2,9 @@
 #define GRAPH_ALGORITHMS_HPP
 
 #include <unordered_set>
+#include <utility>
+
+#include <boost/container_hash/hash.hpp>
 
 #include "cgal_types.hpp"
 #include "graph_construction.hpp"
@@ -20,8 +23,16 @@ struct pair_hash {
     }
 };
 
-PolygonSet compute_coverage(const Node& source, const Node& target, const Graph& g, Cache& cache);
+PolygonSet compute_coverage(
+    const Node& source,
+    const Node& target,
+    const Graph& g,
+    Cache& cache);
 
-std::unordered_set<std::pair<Node, Node>, pair_hash> compute_coverage_edges(const Node& source, PolygonSet& CCR, const Graph& g);
+std::unordered_set<std::pair<Node, Node>, pair_hash> compute_coverage_edges(
+    const Node& source,
+    PolygonSet& ccr,
+    const Graph& g,
+    Cache& cache);
 
 #endif
