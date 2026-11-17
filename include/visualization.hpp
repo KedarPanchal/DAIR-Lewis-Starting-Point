@@ -46,6 +46,11 @@ template <typename R>
           && std::same_as<std::ranges::range_value_t<R>, SCC>
 void visualize(const HoledPolygon& wall_space, const R& sccs) {
     Scene scene;
+    detail::visualize_holed_polygon(
+        wall_space,
+        scene,
+        Color(255, 255, 255),
+        Color(0, 0, 0));
 
     for (const auto& [scc_graph, scc_coverage, scc_area] : sccs) {
         Color coverage_color =
@@ -53,11 +58,6 @@ void visualize(const HoledPolygon& wall_space, const R& sccs) {
         detail::visualize_polygon_set(scc_coverage, scene, coverage_color);
     }
 
-    detail::visualize_holed_polygon(
-        wall_space,
-        scene,
-        Color(255, 255, 255),
-        Color(0, 0, 0));
     CGAL::draw_graphics_scene(scene);
 }
 

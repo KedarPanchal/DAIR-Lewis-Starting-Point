@@ -51,4 +51,7 @@ using fscalar = Kernel::FT;
 using hpscalar = boost::multiprecision::number<
     boost::multiprecision::mpfr_float_backend<HP_PRECISION>>;
 
+// Thread types
+constexpr size_t NUM_THREADS = 10;
+
 #endif

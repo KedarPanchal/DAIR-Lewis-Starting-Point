@@ -40,11 +40,11 @@ std::vector<std::ranges::subrange<graph_iter>> graph_views(
     const size_t num_nodes = g.size();
     if (num_nodes == 0) return views;
 
-    const size_t base_views = num_nodes / 10;
-    const size_t remainder = num_nodes % 10;
+    const size_t base_views = num_nodes / NUM_THREADS;
+    const size_t remainder = num_nodes % NUM_THREADS;
 
     auto start = g.begin();
-    for (size_t i = 0; i < 10 && start != g.end(); ++i) {
+    for (size_t i = 0; i < NUM_THREADS && start != g.end(); ++i) {
         size_t view_size = base_views + (i < remainder ? 1 : 0);
         auto end = start;
         std::advance(end, view_size);
@@ -318,8 +318,8 @@ Graph construct_graph(
     std::mutex graph_mutex;
     {
         std::vector<std::jthread> workers;
-        workers.reserve(10);
-        for (size_t i = 0; i < 10; ++i) {
+        workers.reserve(NUM_THREADS);
+        for (size_t i = 0; i < NUM_THREADS; ++i) {
             workers.emplace_back(
                 process_view,
                 std::cref(w),
