@@ -248,15 +248,16 @@ std::optional<Vector> has_edge(
 
 void process_view(
         const HoledPolygon& w, 
-        std::ranges::subrange<graph_iter> graph,
+        std::ranges::subrange<graph_iter> view,
+        const Graph& graph,
         const fscalar& radius,
         const hpscalar& theta_max_hp,
         const AABBTree& tree,
         Cache& cache,
         std::mutex& graph_mutex
         ) {
-    for (auto& [node, edges] : graph) {
-        for (auto& [other_node, _] : graph) {
+    for (auto& [node, edges] : view) {
+        for (const auto& [other_node, _] : graph) {
             auto maybe_edge = has_edge(
                 w,
                 node.segment(),
@@ -266,13 +267,13 @@ void process_view(
 
             if (!maybe_edge.has_value()) continue;
 
-            std::lock_guard<std::mutex> lock(graph_mutex);
             std::osyncstream(std::cout)
                 << "Adding edge from node "
                 << node.ID()
                 << " to node "
                 << other_node.ID()
                 << '\n';
+            std::lock_guard<std::mutex> lock(graph_mutex);
             sqlite3_int64 coverage_id = cache.insert_coverage_area(
                 node.segment(),
                 other_node.segment(),
@@ -318,12 +319,13 @@ Graph construct_graph(
     std::mutex graph_mutex;
     {
         std::vector<std::jthread> workers;
-        workers.reserve(NUM_THREADS);
-        for (size_t i = 0; i < NUM_THREADS; ++i) {
+        workers.reserve(views.size());
+        for (size_t i = 0; i < views.size(); ++i) {
             workers.emplace_back(
                 process_view,
                 std::cref(w),
                 views[i],
+                std::cref(graph),
                 std::cref(radius),
                 std::cref(theta_max_hp),
                 std::cref(tree),

@@ -82,7 +82,8 @@ std::optional<Vector> has_edge(
 
 void process_view(
         const HoledPolygon& w, 
-        std::ranges::subrange<graph_iter> graph,
+        std::ranges::subrange<graph_iter> view,
+        const Graph& graph,
         const fscalar& radius,
         const hpscalar& theta_max_hp,
         const AABBTree& tree,
