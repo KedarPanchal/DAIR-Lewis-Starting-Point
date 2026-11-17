@@ -7,6 +7,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <syncstream>
 
 #include <sqlite3.h>
 
@@ -169,15 +170,16 @@ std::optional<Vector> has_edge(
     // Avoid division by zero, also, if this occurs, then the vector is
     // degenerate anyway
     if (d1.squared_length() == 0 || d2.squared_length() == 0) {
-        std::cout << "Degenerate transition vector, skipping" << '\n';
+        std::osyncstream(std::cout)
+            << "Degenerate transition vector, skipping" << '\n';
         return std::nullopt;
     }
 
     // A right turn is when the angle between two vectors is greater than pi
     // radians
     if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) {
-        std::cout << "Angle between vectors is a right turn, skipping"
-                  << '\n';
+        std::osyncstream(std::cout)
+            << "Angle between vectors is a right turn, skipping" << '\n';
         return std::nullopt;
     }
 
@@ -196,15 +198,14 @@ std::optional<Vector> has_edge(
         || !p2.has_value()
         || !target.has_on(*p1)
         || !target.has_on(*p2)) {
-        std::cout << "Raycast failed, skipping" << '\n';
-        std::cout << "p1 exists: " << p1.has_value() << '\n';
-        std::cout << "p2 exists: " << p2.has_value() << '\n';
-        std::cout << "p1 on target: "
-                  << (p1.has_value() ? target.has_on(*p1) : false)
-                  << '\n';
-        std::cout << "p2 on target: "
-                  << (p2.has_value() ? target.has_on(*p2) : false)
-                  << '\n';
+        std::osyncstream out(std::cout);
+        out << "Raycast failed, skipping" << '\n';
+        out << "p1 exists: " << p1.has_value() << '\n';
+        out << "p2 exists: " << p2.has_value() << '\n';
+        out << "p1 on target: "
+            << (p1.has_value() ? target.has_on(*p1) : false) << '\n';
+        out << "p2 on target: "
+            << (p2.has_value() ? target.has_on(*p2) : false) << '\n';
         return std::nullopt;
     }
 
@@ -220,18 +221,20 @@ std::optional<Vector> has_edge(
     // Check if any vertices of w are contained in the quadrilateral
     for (const auto& vertex : w.outer_boundary().vertices()) {
         if (quadrilateral.has_on_bounded_side(vertex)) {
-            std::cout << "Vertex " << vertex
-                      << " of outer boundary is contained in quadrilateral, "
-                      << "skipping" << '\n';
+            std::osyncstream(std::cout)
+                << "Vertex " << vertex
+                << " of outer boundary is contained in quadrilateral, "
+                << "skipping" << '\n';
             return std::nullopt;
         }
     }
     for (const auto& hole : w.holes()) {
         for (const auto& vertex : hole.vertices()) {
             if (quadrilateral.has_on_bounded_side(vertex)) {
-                std::cout << "Vertex " << vertex
-                          << " of hole is contained in quadrilateral, skipping"
-                          << '\n';
+                std::osyncstream(std::cout)
+                    << "Vertex " << vertex
+                    << " of hole is contained in quadrilateral, skipping"
+                    << '\n';
                 return std::nullopt;
             }
         }
@@ -264,10 +267,11 @@ void process_view(
             if (!maybe_edge.has_value()) continue;
 
             std::lock_guard<std::mutex> lock(graph_mutex);
-            std::cout << "Adding edge from node " 
+            std::osyncstream(std::cout)
+                << "Adding edge from node "
                 << node.ID()
-                << " to node " 
-                << other_node.ID() 
+                << " to node "
+                << other_node.ID()
                 << '\n';
             sqlite3_int64 coverage_id = cache.insert_coverage_area(
                 node.segment(),

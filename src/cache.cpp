@@ -6,6 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <syncstream>
 
 #include <sqlite3.h>
 
@@ -42,7 +43,7 @@ Cache::~Cache() {
 void Cache::teardown() {
     int finalize_insert_result = sqlite3_finalize(this->insert_statement);
     if (finalize_insert_result != SQLITE_OK) {
-        std::cerr
+        std::osyncstream(std::cerr)
             << "Failed to finalize insert statement: "
             << sqlite3_errmsg(this->db)
             << '\n';
@@ -51,7 +52,7 @@ void Cache::teardown() {
 
     int finalize_select_result = sqlite3_finalize(this->select_statement);
     if (finalize_select_result != SQLITE_OK) {
-        std::cerr
+        std::osyncstream(std::cerr)
             << "Failed to finalize select statement: "
             << sqlite3_errmsg(this->db)
             << '\n';
@@ -60,7 +61,7 @@ void Cache::teardown() {
 
     int close_result = sqlite3_close(this->db);
     if (close_result != SQLITE_OK) {
-        std::cerr
+        std::osyncstream(std::cerr)
             << "Failed to close database: "
             << sqlite3_errmsg(this->db)
             << '\n';
