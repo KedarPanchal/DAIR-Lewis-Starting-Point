@@ -217,8 +217,9 @@ boost::container::small_vector<Curve, 4> Cache::build_standard_stadium(
         target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
     Point target2 =
         target_center + direction.perpendicular(CGAL::CLOCKWISE);
-    std::cout << "Stadium points: " << source1 << ", " << source2
-              << ", " << target1 << ", " << target2 << '\n';
+    std::osyncstream(std::cout) << "Stadium points: " 
+        << source1 << ", " << source2 << ", " << target1 << ", " << target2 
+        << '\n';
 
     // Place them all into a vector and sort them in counterclockwise order
     boost::container::small_vector<Point, 4> rectangle_points{
@@ -277,8 +278,9 @@ CurvedPolygon Cache::build_stadium(
     const Point& source,
     const Point& target,
     const fscalar& radius) {
-    std::cout << "Source: " << source << ", Target: " << target
-              << ", Radius: " << radius << '\n';
+    std::osyncstream(std::cout) << "Source: " << source
+                                << ", Target: " << target
+                                << ", Radius: " << radius << '\n';
 
     // The circle centers are radius distance along the vector from source
     // to target, in both directions
