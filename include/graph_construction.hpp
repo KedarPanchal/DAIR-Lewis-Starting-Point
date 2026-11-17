@@ -5,6 +5,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+#include <mutex>
 
 #include <sqlite3.h>
 
@@ -55,6 +56,10 @@ using Graph = std::unordered_map<
     Node,
     std::vector<std::tuple<Node, Vector, sqlite3_int64>>>;
 
+using graph_iter = decltype(std::declval<Graph>().begin());
+std::vector<std::ranges::subrange<graph_iter>> graph_views(
+        Graph& g, 
+        Cache& cache);
 // -- GRAPH CONSTRUCTION ------------------------------------------------------
 
 void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max);
@@ -72,13 +77,25 @@ std::optional<Vector> has_edge(
     const Segment& source,
     const Segment& target,
     hpscalar theta_max,
-    const AABBTree& tree);
+    const AABBTree& tree
+    );
+
+void process_view(
+        const HoledPolygon& w, 
+        std::ranges::subrange<graph_iter> graph,
+        const fscalar& radius,
+        const hpscalar& theta_max_hp,
+        const AABBTree& tree,
+        Cache& cache,
+        std::mutex& graph_mutex
+        );
 
 Graph construct_graph(
     const HoledPolygon& w,
     const std::vector<std::pair<fscalar, fscalar>>& parameters,
     fscalar theta_max,
     fscalar radius,
-    Cache& cache);
+    Cache& cache
+    );
 
 #endif

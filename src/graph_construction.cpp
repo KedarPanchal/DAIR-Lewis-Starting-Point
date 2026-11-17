@@ -5,6 +5,8 @@
 #include <optional>
 #include <tuple>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 #include <sqlite3.h>
 
@@ -27,6 +29,29 @@
 // Hash value function for boost::hash_combine
 size_t hash_value(const Node& node) {
     return std::hash<size_t>()(node.ID());
+}
+
+std::vector<std::ranges::subrange<graph_iter>> graph_views(
+        Graph& g, 
+        Cache& cache) {
+    std::vector<std::ranges::subrange<graph_iter>> views;
+
+    const size_t num_nodes = g.size();
+    if (num_nodes == 0) return views;
+
+    const size_t base_views = num_nodes / 10;
+    const size_t remainder = num_nodes % 10;
+
+    auto start = g.begin();
+    for (size_t i = 0; i < 10 && start != g.end(); ++i) {
+        size_t view_size = base_views + (i < remainder ? 1 : 0);
+        auto end = start;
+        std::advance(end, view_size);
+        views.emplace_back(start, end);
+        start = end;
+    }
+
+    return views;
 }
 
 // -- GRAPH CONSTRUCTION ALGORITHM --------------------------------------------
@@ -218,12 +243,47 @@ std::optional<Vector> has_edge(
     return CGAL::bisector(d1_line, d2_line).to_vector();
 }
 
+void process_view(
+        const HoledPolygon& w, 
+        std::ranges::subrange<graph_iter> graph,
+        const fscalar& radius,
+        const hpscalar& theta_max_hp,
+        const AABBTree& tree,
+        Cache& cache,
+        std::mutex& graph_mutex
+        ) {
+    for (auto& [node, edges] : graph) {
+        for (auto& [other_node, _] : graph) {
+            auto maybe_edge = has_edge(
+                w,
+                node.segment(),
+                other_node.segment(),
+                theta_max_hp,
+                tree);
+
+            if (!maybe_edge.has_value()) continue;
+
+            std::lock_guard<std::mutex> lock(graph_mutex);
+            std::cout << "Adding edge from node " 
+                << node.ID()
+                << " to node " 
+                << other_node.ID() 
+                << '\n';
+            sqlite3_int64 coverage_id = cache.insert_coverage_area(
+                node.segment(),
+                other_node.segment(),
+                radius);
+            edges.emplace_back(other_node, maybe_edge.value(), coverage_id);
+        }
+    }
+}
+
 Graph construct_graph(
-    const HoledPolygon& w,
-    const std::vector<std::pair<fscalar, fscalar>>& parameters,
-    fscalar theta_max,
-    fscalar radius,
-    Cache& cache) {
+        const HoledPolygon& w,
+        const std::vector<std::pair<fscalar, fscalar>>& parameters,
+        fscalar theta_max,
+        fscalar radius,
+        Cache& cache) {
     Graph graph;
 
     // Add the nodes
@@ -247,26 +307,24 @@ Graph construct_graph(
 
     AABBTree tree(segments.begin(), segments.end());
     tree.build();
-
+    
+    // Multithreaded processing of graph views
     hpscalar theta_max_hp = convert<hpscalar>(theta_max);
-    for (auto& [node, edges] : graph) {
-        for (auto& [other_node, _] : graph) {
-            auto maybe_edge = has_edge(
-                w,
-                node.segment(),
-                other_node.segment(),
-                theta_max_hp,
-                tree);
-            if (maybe_edge.has_value()) {
-                std::cout << "Adding edge from node " << node.ID()
-                          << " to node " << other_node.ID() << '\n';
-                sqlite3_int64 coverage_id = cache.insert_coverage_area(
-                    node.segment(),
-                    other_node.segment(),
-                    radius);
-                edges.emplace_back(
-                    other_node, maybe_edge.value(), coverage_id);
-            }
+    auto views = graph_views(graph, cache);
+    std::mutex graph_mutex;
+    {
+        std::vector<std::jthread> workers;
+        workers.reserve(10);
+        for (size_t i = 0; i < 10; ++i) {
+            workers.emplace_back(
+                process_view,
+                std::cref(w),
+                views[i],
+                std::cref(radius),
+                std::cref(theta_max_hp),
+                std::cref(tree),
+                std::ref(cache),
+                std::ref(graph_mutex));
         }
     }
 

@@ -25,7 +25,7 @@ Cache::Cache(const std::string& name) {
     int open_result = sqlite3_open_v2(
         name.c_str(),
         &(this->db),
-        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX,
+        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
         nullptr);
     this->handle_sqlite_error(open_result, "Failed to open database");
 
