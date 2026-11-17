@@ -66,7 +66,7 @@ be followed:
 - The layer overlap must be greater than 0 and less than the layer length.
 
 Sufficient layers of increasing length and overlap must be provided to ensure
-the environment is thoroughly discretized. Target anywhere from 5 to 20 layers
+the environment is thoroughly discretized. Target anywhere from 3 to 8 layers
 depending on the size and complexity of the environment.
 
 ## Step 3: Specify the Robot
