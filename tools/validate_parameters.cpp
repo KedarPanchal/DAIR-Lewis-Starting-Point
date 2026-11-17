@@ -9,19 +9,19 @@
 int main() {
     std::variant<HoledPolygon, std::string> maybe_wall_space = read_polygon(std::cin);
     if (std::holds_alternative<std::string>(maybe_wall_space)) {
-        std::cerr << "Error in line 1: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << std::endl;
+        std::cerr << "Error in line 1: Invalid wall space polygon: " << std::get<std::string>(maybe_wall_space) << '\n';
         return 1;
     }
     
     std::vector<std::pair<fscalar, fscalar>> parameters = read_wallpapering_parameters(std::cin);
     if (parameters.empty()) {
-        std::cerr << "Error in line 2: Invalid wallpapering parameters or none provided" << std::endl;
+        std::cerr << "Error in line 2: Invalid wallpapering parameters or none provided" << '\n';
         return 1;
     }
 
     std::variant<std::pair<fscalar, fscalar>, std::string> maybe_robot_parameters = read_robot_parameters(std::cin);
     if (std::holds_alternative<std::string>(maybe_robot_parameters)) {
-        std::cerr << "Error in line 3: Invalid robot parameters: " << std::get<std::string>(maybe_robot_parameters) << std::endl;
+        std::cerr << "Error in line 3: Invalid robot parameters: " << std::get<std::string>(maybe_robot_parameters) << '\n';
         return 1;
     }
 

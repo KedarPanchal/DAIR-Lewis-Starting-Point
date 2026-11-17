@@ -148,7 +148,7 @@ std::vector<SCC> scc_areas(const Graph& g, Cache& cache) {
         stack.pop();
 
         if (visited.find(current_node) != visited.end()) continue;
-        std::cout << "Finding SCC for node " << current_node.ID() << std::endl;
+        std::cout << "Finding SCC for node " << current_node.ID() << '\n';
 
         Graph scc;
         find_strongly_connected_component(g_prime, current_node, visited, scc);
@@ -156,7 +156,7 @@ std::vector<SCC> scc_areas(const Graph& g, Cache& cache) {
 
         PolygonSet ccr = scc_coverage(scc, cache);
         fscalar current_area = area(ccr);
-        std::cout << "Found SCC with area " << current_area << std::endl;
+        std::cout << "Found SCC with area " << current_area << '\n';
         areas.emplace_back(std::move(scc), std::move(ccr), current_area);
     }
 

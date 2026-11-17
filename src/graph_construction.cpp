@@ -110,13 +110,13 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
                     ));
     // Avoid division by zero, also, if this occurs, then the vector is degenerate anyway
     if (d1.squared_length() == 0 || d2.squared_length() == 0) {
-        std::cout << "Degenerate transition vector, skipping" << std::endl;
+        std::cout << "Degenerate transition vector, skipping" << '\n';
         return std::nullopt;
     }
 
     // A right turn is when the angle between two vectors is greater than pi radians
     if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) {
-        std::cout << "Angle between vectors is a right turn, skipping" << std::endl;
+        std::cout << "Angle between vectors is a right turn, skipping" << '\n';
         return std::nullopt;
     }
 
@@ -129,11 +129,11 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
         !target.has_on(*p1) ||
         !target.has_on(*p2)
         ) {
-        std::cout << "Raycast failed, skipping" << std::endl;
-        std::cout << "p1 exists: " << p1.has_value() << std::endl;
-        std::cout << "p2 exists: " << p2.has_value() << std::endl;
-        std::cout << "p1 on target: " << (p1.has_value() ? target.has_on(*p1) : false) << std::endl;
-        std::cout << "p2 on target: " << (p2.has_value() ? target.has_on(*p2) : false) << std::endl;
+        std::cout << "Raycast failed, skipping" << '\n';
+        std::cout << "p1 exists: " << p1.has_value() << '\n';
+        std::cout << "p2 exists: " << p2.has_value() << '\n';
+        std::cout << "p1 on target: " << (p1.has_value() ? target.has_on(*p1) : false) << '\n';
+        std::cout << "p2 on target: " << (p2.has_value() ? target.has_on(*p2) : false) << '\n';
         return std::nullopt;
     }
 
@@ -145,14 +145,14 @@ std::optional<Vector> has_edge(const HoledPolygon& w, const Segment& source, con
     // Check if any vertices of w are contained in the quadrilateral
     for (const auto& vertex : w.outer_boundary().vertices()) {
         if (quadrilateral.has_on_bounded_side(vertex)) {
-            std::cout << "Vertex " << vertex << " of outer boundary is contained in quadrilateral, skipping" << std::endl;
+            std::cout << "Vertex " << vertex << " of outer boundary is contained in quadrilateral, skipping" << '\n';
             return std::nullopt;
         }
     }
     for (const auto& hole : w.holes()) {
         for (const auto& vertex : hole.vertices()) {
             if (quadrilateral.has_on_bounded_side(vertex)) {
-                std::cout << "Vertex " << vertex << " of hole is contained in quadrilateral, skipping" << std::endl;
+                std::cout << "Vertex " << vertex << " of hole is contained in quadrilateral, skipping" << '\n';
                 return std::nullopt;
             }
         }
@@ -174,7 +174,7 @@ Graph construct_graph(
     Graph graph;
     // Add the nodes
     for (const auto& [l, o_max] : parameters) {
-        std::cout << "Adding layer with length " << l << " and offset " << o_max << std::endl;
+        std::cout << "Adding layer with length " << l << " and offset " << o_max << '\n';
         add_layer(w, graph, l, o_max);
     }
 
@@ -193,7 +193,7 @@ Graph construct_graph(
         for (auto& [other_node, _] : graph) {
             auto maybe_edge = has_edge(w, node.segment(), other_node.segment(), theta_max_hp, tree);
             if (maybe_edge.has_value()) {
-                std::cout << "Adding edge from node " << node.ID() << " to node " << other_node.ID() << std::endl;
+                std::cout << "Adding edge from node " << node.ID() << " to node " << other_node.ID() << '\n';
                 sqlite3_int64 coverage_id = cache.insert_coverage_area(node.segment(), other_node.segment(), radius);
                 edges.emplace_back(other_node, maybe_edge.value(), coverage_id);
             }

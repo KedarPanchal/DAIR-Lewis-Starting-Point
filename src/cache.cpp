@@ -24,7 +24,7 @@ void Cache::teardown() {
         std::cerr 
             << "Failed to finalize insert statement: " 
             << sqlite3_errmsg(this->db) 
-            << std::endl;
+            << '\n';
     }
     this->insert_statement = nullptr;
 
@@ -33,7 +33,7 @@ void Cache::teardown() {
         std::cerr 
             << "Failed to finalize select statement: " 
             << sqlite3_errmsg(this->db) 
-            << std::endl;
+            << '\n';
     }
     this->select_statement = nullptr;
 
@@ -42,7 +42,7 @@ void Cache::teardown() {
         std::cerr 
             << "Failed to close database: " 
             << sqlite3_errmsg(this->db) 
-            << std::endl;
+            << '\n';
     }
     this->db = nullptr;
 }
@@ -207,7 +207,7 @@ boost::container::small_vector<Curve, 4> Cache::build_standard_stadium(
     Point source2 = source_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
     Point target1 = target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
     Point target2 = target_center + direction.perpendicular(CGAL::CLOCKWISE);
-    std::cout << "Stadium points: " << source1 << ", " << source2 << ", " << target1 << ", " << target2 << std::endl;
+    std::cout << "Stadium points: " << source1 << ", " << source2 << ", " << target1 << ", " << target2 << '\n';
     // Place them all into a vector and sort them in counterclockwise order
     boost::container::small_vector<Point, 4> rectangle_points{source1, source2, target1, target2};
     boost::container::small_vector<Point, 4> sorted_rectangle_points;
@@ -252,7 +252,7 @@ CurvedPolygon Cache::build_stadium(
         const Point& target, 
         const fscalar& radius
         ) {
-    std::cout << "Source: " << source << ", Target: " << target << ", Radius: " << radius << std::endl;
+    std::cout << "Source: " << source << ", Target: " << target << ", Radius: " << radius << '\n';
     // The circle centers are radius distance along the vector from source to target, in both directions
     Vector direction = Vector{source, target};
     direction = direction / CGAL::sqrt(direction.squared_length()) * radius;
