@@ -32,29 +32,6 @@ size_t hash_value(const Node& node) {
     return std::hash<size_t>()(node.ID());
 }
 
-std::vector<std::ranges::subrange<graph_iter>> graph_views(
-        Graph& g, 
-        Cache& cache) {
-    std::vector<std::ranges::subrange<graph_iter>> views;
-
-    const size_t num_nodes = g.size();
-    if (num_nodes == 0) return views;
-
-    const size_t base_views = num_nodes / NUM_THREADS;
-    const size_t remainder = num_nodes % NUM_THREADS;
-
-    auto start = g.begin();
-    for (size_t i = 0; i < NUM_THREADS && start != g.end(); ++i) {
-        size_t view_size = base_views + (i < remainder ? 1 : 0);
-        auto end = start;
-        std::advance(end, view_size);
-        views.emplace_back(start, end);
-        start = end;
-    }
-
-    return views;
-}
-
 // -- GRAPH CONSTRUCTION ALGORITHM --------------------------------------------
 
 // Adds layers around the boundary of a single polygon
@@ -246,7 +223,7 @@ std::optional<Vector> has_edge(
     return CGAL::bisector(d1_line, d2_line).to_vector();
 }
 
-void process_view(
+void process_graph_view(
         const HoledPolygon& w, 
         std::ranges::subrange<graph_iter> view,
         const Graph& graph,
@@ -315,14 +292,14 @@ Graph construct_graph(
     
     // Multithreaded processing of graph views
     hpscalar theta_max_hp = convert<hpscalar>(theta_max);
-    auto views = graph_views(graph, cache);
+    auto views = split_into_views<Graph, graph_iter>(graph);
     std::mutex graph_mutex;
     {
         std::vector<std::jthread> workers;
         workers.reserve(views.size());
         for (size_t i = 0; i < views.size(); ++i) {
             workers.emplace_back(
-                process_view,
+                process_graph_view,
                 std::cref(w),
                 views[i],
                 std::cref(graph),

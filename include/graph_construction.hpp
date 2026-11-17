@@ -55,11 +55,8 @@ size_t hash_value(const Node& node);
 using Graph = std::unordered_map<
     Node,
     std::vector<std::tuple<Node, Vector, sqlite3_int64>>>;
-
 using graph_iter = decltype(std::declval<Graph>().begin());
-std::vector<std::ranges::subrange<graph_iter>> graph_views(
-        Graph& g, 
-        Cache& cache);
+
 // -- GRAPH CONSTRUCTION ------------------------------------------------------
 
 void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max);
@@ -80,7 +77,7 @@ std::optional<Vector> has_edge(
     const AABBTree& tree
     );
 
-void process_view(
+void process_graph_view(
         const HoledPolygon& w, 
         std::ranges::subrange<graph_iter> view,
         const Graph& graph,

@@ -5,6 +5,7 @@
 #include <tuple>
 #include <unordered_set>
 #include <vector>
+#include <syncstream>
 
 #include <sqlite3.h>
 
@@ -91,20 +92,39 @@ fscalar area(const PolygonSet& ps) {
     return total_area;
 }
 
-// Compute area of all edges in a strongly connected component
-PolygonSet scc_coverage(const Graph& scc, Cache& cache) {
-    PolygonSet ccr;
-    for (const auto& [node, neighbors] : scc) {
-        for (const auto& [_, _, ccr_id] : neighbors) {
-            PolygonSet ccr_prime = cache.get_coverage_area(ccr_id);
-            ccr.join(std::move(ccr_prime));
+// -- GRAPH HELPER FUNCTIONS --------------------------------------------------
+
+// Process a subset of SCCs to compute coverage areas
+void process_area_view(
+        std::ranges::subrange<vector_iter> view, 
+        Cache& cache, 
+        std::vector<std::tuple<Graph, PolygonSet, fscalar>>& areas,
+        std::mutex& areas_mutex) {
+    for (const auto& scc : view) {
+        PolygonSet ccr;
+        // Compute SCC coverage
+        for (const auto& [node, neighbors] : scc) {
+            for (const auto& [_, _, ccr_id] : neighbors) {
+                PolygonSet ccr_prime;
+                {
+                    std::lock_guard<std::mutex> lock(areas_mutex);
+                    ccr_prime = cache.get_coverage_area(ccr_id);
+                }
+                ccr.join(std::move(ccr_prime));
+            }
+            // Compute the area
+            fscalar current_area = area(ccr);
+            std::osyncstream(std::cout)
+                << "Computed coverage area for node "
+                << node.ID()
+                << '\n';
+            {
+                std::lock_guard<std::mutex> lock(areas_mutex);
+                areas.emplace_back(scc, std::move(ccr), current_area);
+            }
         }
     }
-
-    return ccr;
 }
-
-// -- GRAPH HELPER FUNCTIONS --------------------------------------------------
 
 // Find the finishing times of the nodes using DFS
 // These times are stored as a stack
@@ -186,6 +206,7 @@ std::vector<SCC> scc_areas(const Graph& g, Cache& cache) {
     // Find SCCs by performing DFS on the transposed graph in the order of
     // finishing times
     visited.clear();
+    std::vector<Graph> sccs;
     while (!stack.empty()) {
         Node current_node = stack.top();
         stack.pop();
@@ -201,12 +222,23 @@ std::vector<SCC> scc_areas(const Graph& g, Cache& cache) {
             std::cout << "SCC is empty or has only one node, skipping\n";
             continue;
         }
-
-        PolygonSet ccr = scc_coverage(scc, cache);
-        fscalar current_area = area(ccr);
-        std::cout << "Found SCC with area " << current_area << '\n';
-        areas.emplace_back(std::move(scc), std::move(ccr), current_area);
+        sccs.push_back(std::move(scc));
     }
 
+    auto views = split_into_views<std::vector<Graph>, vector_iter>(sccs);
+    std::mutex areas_mutex;
+    {
+        std::vector<std::jthread> workers;
+        workers.reserve(views.size());
+        for (size_t i = 0; i < views.size(); ++i) {
+            workers.emplace_back(
+                process_area_view,
+                views[i],
+                std::ref(cache),
+                std::ref(areas),
+                std::ref(areas_mutex)
+            );
+        }
+    }
     return areas;
 }

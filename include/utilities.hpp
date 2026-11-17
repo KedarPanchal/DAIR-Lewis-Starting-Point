@@ -37,4 +37,26 @@ To convert(const From& x) {
 
 std::ostream& operator<<(std::ostream& os, const Graph& g);
 
+template <typename Collection, typename IterType>
+std::vector<std::ranges::subrange<IterType>> split_into_views(Collection& collection) {
+    std::vector<std::ranges::subrange<IterType>> views;
+
+    const size_t num_elements = collection.size();
+    if (num_elements == 0) return views;
+
+    const size_t base_views = num_elements / NUM_THREADS;
+    const size_t remainder = num_elements % NUM_THREADS;
+
+    auto start = collection.begin();
+    for (size_t i = 0; i < NUM_THREADS && start != collection.end(); ++i) {
+        size_t view_size = base_views + (i < remainder ? 1 : 0);
+        auto end = start;
+        std::advance(end, view_size);
+        views.emplace_back(start, end);
+        start = end;
+    }
+
+    return views;
+}
+
 #endif
