@@ -112,16 +112,15 @@ void process_area_view(
                 }
                 ccr.join(std::move(ccr_prime));
             }
-            // Compute the area
-            fscalar current_area = area(ccr);
-            std::osyncstream(std::cout)
-                << "Computed coverage area for node "
-                << node.ID()
-                << '\n';
-            {
-                std::lock_guard<std::mutex> lock(areas_mutex);
-                areas.emplace_back(scc, std::move(ccr), current_area);
-            }
+        }
+        // Compute the area
+        fscalar current_area = area(ccr);
+        std::osyncstream(std::cout)
+            << "Computed coverage area for SCC"
+            << '\n';
+        {
+            std::lock_guard<std::mutex> lock(areas_mutex);
+            areas.emplace_back(std::move(scc), std::move(ccr), current_area);
         }
     }
 }
