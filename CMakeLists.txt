@@ -26,9 +26,15 @@ endif()
 
 if (MSVC)
     set(ASAN_FLAG "/fsanitize=address")
+    set(TSAN_FLAG "/fsanitize=thread")
 else()
     set(ASAN_FLAG "-fsanitize=address")
+    set(TSAN_FLAG "-fsanitize=thread")
 endif()
+
+# Choose ASAN or TSAN based on user input
+option(USE_ASAN "Enable AddressSanitizer" OFF)
+option(USE_TSAN "Enable ThreadSanitizer" OFF)
 
 # Find dependencies
 find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGL)
@@ -73,5 +79,11 @@ target_compile_definitions(robot_start_position PRIVATE
     CGAL_CHECK_EXPENSIVE
     CGAL_CHECK_EXACTNESS
 )
-target_compile_options(robot_start_position PRIVATE -g ${ASAN_FLAG})
-target_link_options(robot_start_position PRIVATE ${ASAN_FLAG})
+
+if (USE_ASAN)
+    target_compile_options(robot_start_position PRIVATE -g ${ASAN_FLAG})
+    target_link_options(robot_start_position PRIVATE ${ASAN_FLAG})
+elseif (USE_TSAN)
+    target_compile_options(robot_start_position PRIVATE -g ${TSAN_FLAG})
+    target_link_options(robot_start_position PRIVATE ${TSAN_FLAG})
+endif()
