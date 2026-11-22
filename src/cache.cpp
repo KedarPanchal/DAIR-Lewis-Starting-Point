@@ -6,7 +6,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <syncstream>
 
 #include <sqlite3.h>
 
@@ -26,7 +25,7 @@ Cache::Cache(const std::string& name) {
     int open_result = sqlite3_open_v2(
         name.c_str(),
         &(this->db),
-        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
+        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX,
         nullptr);
     this->handle_sqlite_error(open_result, "Failed to open database");
 
@@ -43,7 +42,7 @@ Cache::~Cache() {
 void Cache::teardown() {
     int finalize_insert_result = sqlite3_finalize(this->insert_statement);
     if (finalize_insert_result != SQLITE_OK) {
-        std::osyncstream(std::cerr)
+        std::cerr
             << "Failed to finalize insert statement: "
             << sqlite3_errmsg(this->db)
             << '\n';
@@ -52,7 +51,7 @@ void Cache::teardown() {
 
     int finalize_select_result = sqlite3_finalize(this->select_statement);
     if (finalize_select_result != SQLITE_OK) {
-        std::osyncstream(std::cerr)
+        std::cerr
             << "Failed to finalize select statement: "
             << sqlite3_errmsg(this->db)
             << '\n';
@@ -61,7 +60,7 @@ void Cache::teardown() {
 
     int close_result = sqlite3_close(this->db);
     if (close_result != SQLITE_OK) {
-        std::osyncstream(std::cerr)
+        std::cerr
             << "Failed to close database: "
             << sqlite3_errmsg(this->db)
             << '\n';
@@ -81,8 +80,8 @@ void Cache::handle_sqlite_error(
 }
 
 void Cache::handle_sqlite_error(
-    const std::string& error_message,
-    std::function<bool()> condition) {
+        const std::string& error_message,
+        std::function<bool()> condition) {
     if (condition()) {
         std::string error_msg =
             error_message + ": " + std::string(sqlite3_errmsg(this->db));
@@ -217,7 +216,7 @@ boost::container::small_vector<Curve, 4> Cache::build_standard_stadium(
         target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
     Point target2 =
         target_center + direction.perpendicular(CGAL::CLOCKWISE);
-    std::osyncstream(std::cout) << "Stadium points: " 
+    std::cout << "Stadium points: " 
         << source1 << ", " << source2 << ", " << target1 << ", " << target2 
         << '\n';
 
@@ -278,7 +277,7 @@ CurvedPolygon Cache::build_stadium(
     const Point& source,
     const Point& target,
     const fscalar& radius) {
-    std::osyncstream(std::cout) << "Source: " << source
+    std::cout << "Source: " << source
                                 << ", Target: " << target
                                 << ", Radius: " << radius << '\n';
 
