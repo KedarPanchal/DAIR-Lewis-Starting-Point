@@ -76,6 +76,9 @@ foreach (target IN LISTS ALL_TARGETS)
         ${MPFR_LIBRARIES}
         SQLite3::SQLite3
     )
+    if (NOT APPLE)
+        target_compile_options(${target} PRIVATE -fno-plt)
+    endif()
     target_compile_options(${target} PRIVATE -march=native)
 endforeach()
 
