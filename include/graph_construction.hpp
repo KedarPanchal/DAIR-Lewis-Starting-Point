@@ -5,7 +5,6 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
-#include <mutex>
 
 #include <sqlite3.h>
 
@@ -76,17 +75,6 @@ std::optional<Vector> has_edge(
     hpscalar theta_max,
     const AABBTree& tree
     );
-
-void process_graph_view(
-        const HoledPolygon& w, 
-        std::ranges::subrange<graph_iter> view,
-        const Graph& graph,
-        const fscalar& radius,
-        const hpscalar& theta_max_hp,
-        const AABBTree& tree,
-        Cache& cache,
-        std::mutex& graph_mutex
-        );
 
 Graph construct_graph(
     const HoledPolygon& w,

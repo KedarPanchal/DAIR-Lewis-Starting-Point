@@ -5,9 +5,6 @@
 #include <optional>
 #include <tuple>
 #include <vector>
-#include <thread>
-#include <mutex>
-#include <syncstream>
 
 #include <sqlite3.h>
 
@@ -147,16 +144,14 @@ std::optional<Vector> has_edge(
     // Avoid division by zero, also, if this occurs, then the vector is
     // degenerate anyway
     if (d1.squared_length() == 0 || d2.squared_length() == 0) {
-        std::osyncstream(std::cout)
-            << "Degenerate transition vector, skipping" << '\n';
+        std::cout << "Degenerate transition vector, skipping" << '\n';
         return std::nullopt;
     }
 
     // A right turn is when the angle between two vectors is greater than pi
     // radians
     if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) {
-        std::osyncstream(std::cout)
-            << "Angle between vectors is a right turn, skipping" << '\n';
+        std::cout << "Angle between vectors is a right turn, skipping" << '\n';
         return std::nullopt;
     }
 
@@ -175,13 +170,12 @@ std::optional<Vector> has_edge(
         || !p2.has_value()
         || !target.has_on(*p1)
         || !target.has_on(*p2)) {
-        std::osyncstream out(std::cout);
-        out << "Raycast failed, skipping" << '\n';
-        out << "p1 exists: " << p1.has_value() << '\n';
-        out << "p2 exists: " << p2.has_value() << '\n';
-        out << "p1 on target: "
+        std::cout << "Raycast failed, skipping" << '\n';
+        std::cout << "p1 exists: " << p1.has_value() << '\n';
+        std::cout << "p2 exists: " << p2.has_value() << '\n';
+        std::cout << "p1 on target: "
             << (p1.has_value() ? target.has_on(*p1) : false) << '\n';
-        out << "p2 on target: "
+        std::cout << "p2 on target: "
             << (p2.has_value() ? target.has_on(*p2) : false) << '\n';
         return std::nullopt;
     }
@@ -198,7 +192,7 @@ std::optional<Vector> has_edge(
     // Check if any vertices of w are contained in the quadrilateral
     for (const auto& vertex : w.outer_boundary().vertices()) {
         if (quadrilateral.has_on_bounded_side(vertex)) {
-            std::osyncstream(std::cout)
+            std::cout
                 << "Vertex " << vertex
                 << " of outer boundary is contained in quadrilateral, "
                 << "skipping" << '\n';
@@ -208,7 +202,7 @@ std::optional<Vector> has_edge(
     for (const auto& hole : w.holes()) {
         for (const auto& vertex : hole.vertices()) {
             if (quadrilateral.has_on_bounded_side(vertex)) {
-                std::osyncstream(std::cout)
+                std::cout
                     << "Vertex " << vertex
                     << " of hole is contained in quadrilateral, skipping"
                     << '\n';
@@ -221,43 +215,6 @@ std::optional<Vector> has_edge(
     Line d1_line(source.source(), d1);
     Line d2_line(source.target(), d2);
     return CGAL::bisector(d1_line, d2_line).to_vector();
-}
-
-void process_graph_view(
-        const HoledPolygon& w, 
-        std::ranges::subrange<graph_iter> view,
-        const Graph& graph,
-        const fscalar& radius,
-        const hpscalar& theta_max_hp,
-        const AABBTree& tree,
-        Cache& cache,
-        std::mutex& graph_mutex
-        ) {
-    for (auto& [node, edges] : view) {
-        for (const auto& [other_node, _] : graph) {
-            auto maybe_edge = has_edge(
-                w,
-                node.segment(),
-                other_node.segment(),
-                theta_max_hp,
-                tree);
-
-            if (!maybe_edge.has_value()) continue;
-
-            std::osyncstream(std::cout)
-                << "Adding edge from node "
-                << node.ID()
-                << " to node "
-                << other_node.ID()
-                << '\n';
-            std::lock_guard<std::mutex> lock(graph_mutex);
-            sqlite3_int64 coverage_id = cache.insert_coverage_area(
-                node.segment(),
-                other_node.segment(),
-                radius);
-            edges.emplace_back(other_node, maybe_edge.value(), coverage_id);
-        }
-    }
 }
 
 Graph construct_graph(
@@ -292,22 +249,29 @@ Graph construct_graph(
     
     // Multithreaded processing of graph views
     hpscalar theta_max_hp = convert<hpscalar>(theta_max);
-    auto views = split_into_views<Graph, graph_iter>(graph);
-    std::mutex graph_mutex;
-    {
-        std::vector<std::jthread> workers;
-        workers.reserve(views.size());
-        for (size_t i = 0; i < views.size(); ++i) {
-            workers.emplace_back(
-                process_graph_view,
-                std::cref(w),
-                views[i],
-                std::cref(graph),
-                std::cref(radius),
-                std::cref(theta_max_hp),
-                std::cref(tree),
-                std::ref(cache),
-                std::ref(graph_mutex));
+    for (auto& [node, edges] : graph) {
+        for (const auto& [other_node, _] : graph) {
+            auto maybe_edge = has_edge(
+                w,
+                node.segment(),
+                other_node.segment(),
+                theta_max_hp,
+                tree);
+
+            if (!maybe_edge.has_value()) continue;
+
+            std::cout
+                << "Adding edge from node "
+                << node.ID()
+                << " to node "
+                << other_node.ID()
+                << '\n';
+            sqlite3_int64 coverage_id = cache.insert_coverage_area(
+                node.segment(),
+                other_node.segment(),
+                radius
+                );
+            edges.emplace_back(other_node, maybe_edge.value(), coverage_id);
         }
     }
 

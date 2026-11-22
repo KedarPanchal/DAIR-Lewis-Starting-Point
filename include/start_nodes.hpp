@@ -14,12 +14,7 @@ using vector_iter = decltype(std::declval<std::vector<Graph>>().begin());
 fscalar polygon_area(const CurvedTraits::Polygon_2& polygon);
 fscalar area(const PolygonSet& ps);
 
-void process_area_view(
-    std::ranges::subrange<vector_iter> view, 
-    Cache& cache, 
-    std::vector<std::tuple<Graph, PolygonSet, fscalar>>& areas,
-    std::mutex& areas_mutex
-    );
+fscalar compute_coverage(const Graph& scc, Cache& cache);
 void finishing_times(
     const Graph& g,
     const Node& node,
