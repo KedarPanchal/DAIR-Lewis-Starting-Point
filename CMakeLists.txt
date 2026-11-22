@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 4.2.3)
 
+# Set release to optimize for speed
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+endif()
+
 project(
     robot_start_position
     VERSION 0.1.0
@@ -9,7 +14,6 @@ project(
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_BUILD_TYPE Debug)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-fexperimental-library)
@@ -24,6 +28,7 @@ if (POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
+# Set sanitizer flags based on the compiler
 if (MSVC)
     set(ASAN_FLAG "/fsanitize=address")
     set(TSAN_FLAG "/fsanitize=thread")
@@ -71,14 +76,17 @@ foreach (target IN LISTS ALL_TARGETS)
         ${MPFR_LIBRARIES}
         SQLite3::SQLite3
     )
+    target_compile_options(${target} PRIVATE -march=native)
 endforeach()
 
 # Define preprocessor macros and compile options
-target_compile_definitions(robot_start_position PRIVATE 
-    CGAL_USE_BASIC_VIEWER
-    CGAL_CHECK_EXPENSIVE
-    CGAL_CHECK_EXACTNESS
-)
+target_compile_definitions(robot_start_position PRIVATE CGAL_USE_BASIC_VIEWER)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(robot_start_position PRIVATE 
+        CGAL_CHECK_EXPENSIVE
+        CGAL_CHECK_EXACTNESS
+    )
+endif()
 
 if (USE_ASAN)
     target_compile_options(robot_start_position PRIVATE -g ${ASAN_FLAG})

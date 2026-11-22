@@ -14,7 +14,11 @@ using vector_iter = decltype(std::declval<std::vector<Graph>>().begin());
 fscalar polygon_area(const CurvedTraits::Polygon_2& polygon);
 fscalar area(const PolygonSet& ps);
 
-fscalar compute_coverage(const Graph& scc, Cache& cache);
+fscalar compute_coverage(
+    const Graph& scc, 
+    std::vector<SCC> areas, 
+    Cache& cache
+    );
 void finishing_times(
     const Graph& g,
     const Node& node,

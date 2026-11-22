@@ -92,7 +92,7 @@ fscalar area(const PolygonSet& ps) {
 }
 
 // -- GRAPH HELPER FUNCTIONS --------------------------------------------------
-fscalar compute_coverage(const Graph& scc, Cache& cache) {
+void compute_coverage(Graph& scc, std::vector<SCC>& areas, Cache& cache) {
     PolygonSet ccr;
     // Compute SCC coverage
     for (const auto& [node, neighbors] : scc) {
@@ -104,7 +104,7 @@ fscalar compute_coverage(const Graph& scc, Cache& cache) {
     // Compute the area
     fscalar current_area = area(ccr);
     std::cout << "Computed coverage area for SCC\n";
-    return current_area;
+    areas.emplace_back(std::move(scc), std::move(ccr), current_area);
 }
 
 // Find the finishing times of the nodes using DFS
@@ -173,7 +173,7 @@ void find_strongly_connected_component(
 std::vector<SCC> scc_areas(const Graph& g, Cache& cache) {
     std::stack<Node> stack;
     std::unordered_set<Node> visited;
-    std::vector<std::tuple<Graph, PolygonSet, fscalar>> areas;
+    std::vector<SCC> areas;
 
     // Find finishing times of all nodes in the graph using DFS
     for (const auto& [node, _] : g) {
@@ -195,15 +195,14 @@ std::vector<SCC> scc_areas(const Graph& g, Cache& cache) {
             continue;
         }
         std::cout << "Finding SCC for node " << current_node.ID() << '\n';
-
         Graph scc;
         find_strongly_connected_component(g_prime, current_node, visited, scc);
+
         if (scc.size() <= 1) {
             std::cout << "SCC is empty or has only one node, skipping\n";
             continue;
         }
-        fscalar area = compute_coverage(scc, cache);
-        areas.emplace_back(std::move(scc), PolygonSet{}, area);
+        compute_coverage(scc, areas, cache);
     }
     
     return areas;
