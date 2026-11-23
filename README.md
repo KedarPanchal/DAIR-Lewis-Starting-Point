@@ -27,3 +27,8 @@ The program can be run with the following command:
 Where `<input_file>` is a `.dat` file describing the environment and the robot.
 See [the test case generation skill](.agents/skills/generating-test-cases/SKILL.md)
 for how to format one, and `test_data/` for examples.
+
+> [!NOTE]
+> Since the program reads from the standard input, any stream of 
+> properly-formatted information can be supplied to it. Since this is most
+> commonly in the form of a file, the above format is suggested.
