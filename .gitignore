@@ -5,5 +5,8 @@ build/**
 # MacOS Artifacts
 **/.DS_Store
 
-#SQLite Artifacts
+# SQLite Artifacts
 *.db
+
+# Miscellaneous Artifacts
+.freebuff
