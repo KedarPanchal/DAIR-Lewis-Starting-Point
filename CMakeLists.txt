@@ -54,7 +54,7 @@ add_executable(robot_start_position
     src/utilities.cpp 
     src/graph_construction.cpp 
     src/coverage_path.cpp
-    src/start_nodes.cpp
+    src/coverage_segmentation.cpp
     src/visualization.cpp
     src/cache.cpp
 )

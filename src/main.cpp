@@ -8,7 +8,7 @@
 #include "utilities.hpp"
 #include "cache.hpp"
 #include "graph_construction.hpp"
-#include "start_nodes.hpp"
+#include "coverage_segmentation.hpp"
 #include "visualization.hpp"
 
 int main() {

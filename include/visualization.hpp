@@ -11,7 +11,7 @@
 
 #include "cgal_types.hpp"
 #include "utilities.hpp"
-#include "start_nodes.hpp"
+#include "coverage_segmentation.hpp"
 
 using Color = CGAL::IO::Color;
 using Scene = CGAL::Graphics_scene;
