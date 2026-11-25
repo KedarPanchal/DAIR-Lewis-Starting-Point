@@ -22,7 +22,6 @@ else
         echo "CGAL already exists, skipping clone..."
     else
         echo "Cloning CGAL..."
-        git clone
         git clone https://github.com/CGAL/cgal.git --depth 1
     fi
     cd cgal
