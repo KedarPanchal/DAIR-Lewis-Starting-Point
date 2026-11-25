@@ -13,7 +13,7 @@ project(
     LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -29,17 +29,17 @@ if (APPLE)
     list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew" "/usr/local" "opt/homebrew/opt/qt")
 endif()
 
+# Don't use FindBoost
+if (POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
 # Actually find dependencies
 find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGL)
 find_package(CGAL REQUIRED COMPONENTS Qt6)
 find_package(Boost REQUIRED)
 find_package(MPFR REQUIRED)
 find_package(SQLite3 REQUIRED)
-
-# Don't use FindBoost
-if (POLICY CMP0167)
-    cmake_policy(SET CMP0167 NEW)
-endif()
 
 # -- DEBUGGING AND SANITIZERS -------------------------------------------------
 # Set sanitizer flags based on the compiler

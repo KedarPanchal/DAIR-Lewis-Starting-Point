@@ -1,9 +1,6 @@
 #ifndef VISUALIZATION_HPP
 #define VISUALIZATION_HPP
 
-#include <concepts>
-#include <ranges>
-
 #include <CGAL/IO/Color.h>
 #include <CGAL/Graphics_scene.h>
 #include <CGAL/draw_polygon_2.h>
@@ -42,8 +39,6 @@ namespace detail {
 }
 
 template <typename R>
-    requires std::ranges::range<R>
-          && std::same_as<std::ranges::range_value_t<R>, SCC>
 void visualize(const HoledPolygon& wall_space, const R& sccs) {
     Scene scene;
     

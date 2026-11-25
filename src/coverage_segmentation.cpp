@@ -96,7 +96,7 @@ void compute_coverage(Graph& scc, std::vector<SCC>& areas, Cache& cache) {
     PolygonSet ccr;
     // Compute SCC coverage
     for (const auto& [node, neighbors] : scc) {
-        for (const auto& [_, _, ccr_id] : neighbors) {
+        for ([[maybe_unused]] const auto& [_1, _2, ccr_id] : neighbors) {
             PolygonSet ccr_prime = cache.get_coverage_area(ccr_id);
             ccr.join(std::move(ccr_prime));
         }
@@ -115,7 +115,7 @@ void finishing_times(
     std::unordered_set<Node>& visited,
     std::stack<Node>& stack) {
     visited.insert(node);
-    for (const auto& [neighbor, _, _] : g.at(node)) {
+    for ([[maybe_unused]] const auto& [neighbor, _1, _2] : g.at(node)) {
         if (visited.find(neighbor) == visited.end()) {
             finishing_times(g, neighbor, visited, stack);
         }

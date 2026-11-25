@@ -87,7 +87,7 @@ read_robot_parameters(std::istream& in) {
 std::ostream& operator<<(std::ostream& os, const Graph& g) {
     for (const auto& [v, neighbors] : g) {
         os << "[" << v.ID() << "] -> ";
-        for (const auto& [u, _, _] : neighbors) {
+        for ([[maybe_unused]] const auto& [u, _1, _2] : neighbors) {
             os << u.ID() << " ";
         }
     }
