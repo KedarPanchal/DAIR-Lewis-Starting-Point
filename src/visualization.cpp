@@ -13,7 +13,7 @@ namespace detail {
         int r = rand.get_int(0, 256);
         int g = rand.get_int(0, 256);
         int b = rand.get_int(0, 256);
-        return CGAL::Color(r, g, b, 100);
+        return CGAL::IO::Color(r, g, b, 100);
     }
 
     void visualize_holed_polygon(
