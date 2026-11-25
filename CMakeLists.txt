@@ -77,12 +77,14 @@ set(ALL_TARGETS robot_start_position validate_parameters)
 # Link libraries and include headers
 foreach (target IN LISTS ALL_TARGETS)
     target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    # Linking to SQLite::SQLite3 will trigger a warning
+    # Ignore it since it's the only way to link on the HPRC cluster
     target_link_libraries(${target} PRIVATE 
         CGAL::CGAL 
         CGAL::CGAL_Qt6 
         Boost::boost 
         ${MPFR_LIBRARIES}
-        SQLite3::SQLite3
+        SQLite::SQLite3
     )
     if (NOT APPLE)
         target_compile_options(${target} PRIVATE -fno-plt)
