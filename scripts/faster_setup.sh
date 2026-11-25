@@ -1,3 +1,6 @@
+CALLING_DIR="$PWD"
+echo "Expecting ${CALLING_DIR} to be the root of the project..."
+
 # Load LMod Modules
 # TODO: Figure out the version of MPFR and Boost to load
 module load \
@@ -18,8 +21,6 @@ cmake -S . -B build \
 cmake --install build
 
 # Build the project
-cd $SCRATCH
-git clone https://github.com/KedarPanchal/DAIR-Lewis-Starting-Point.git --depth 1
-cd DAIR-Lewis-Starting-Point
+cd $CALLING_DIR
 cmake -S . -B build -DCGAL_PREFIX="$SCRATCH/cgal-install"
 cmake --build build
