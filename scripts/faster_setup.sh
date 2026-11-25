@@ -7,6 +7,7 @@ module load \
     GCCcore/13.3.0 \
     GCC/13.3.0 \
     SQLite/3.45.3 \
+    GLib/2.80.4 \
     Qt6/6.7.2 \
     MPFR/4.2.1 \
     Boost/1.85.0
