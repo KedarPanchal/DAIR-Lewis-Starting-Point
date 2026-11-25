@@ -19,6 +19,21 @@ After building the Makefiles, compile the program with:
 cmake --build build
 ```
 
+### Build Options
+The following build options are available:
+- `CMAKE_BUILD_TYPE`: The build type to use. Options are `Debug`, `Release`, 
+`RelWithDebInfo`, and `MinSizeRel`. Default is `Release`.
+- `CGAL_PREFIX`: The prefix path to CGAL. If CGAL is installed in a non-standard
+location, this option can be used to specify the path to CGAL. Default is empty.
+- `USE_ASAN`: Whether to use AddressSanitizer. Options are `ON` and `OFF`. 
+Default is `OFF`.
+- `USE_TSAN`: Whether to use ThreadSanitizer. Options are `ON` and `OFF`. 
+Default is `OFF`.
+
+> [!NOTE]
+> `USE_ASAN` and `USE_TSAN` are mutually exclusive. If both are set to `ON`,
+> `USE_ASAN` will be used and `USE_TSAN` will be ignored.
+
 ## Running the Program
 The program can be run with the following command:
 ```bash

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.26.5)
 
+# -- BUILD CONFIGURATION ------------------------------------------------------ 
+
 # Set release to optimize for speed
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
@@ -15,19 +17,31 @@ set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-fexperimental-library)
-endif()
+# -- DEPENDENCIES -------------------------------------------------------------
 
 # Add CMake prefix path to find dependencies
+# First append specified CGAL prefix if built from source
+if (CGAL_PREFIX)
+    list(APPEND CMAKE_PREFIX_PATH "${CGAL_PREFIX}")
+endif()
+# Then append default paths for Homebrew and system installations
 if (APPLE)
     list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew" "/usr/local" "opt/homebrew/opt/qt")
 endif()
 
+# Actually find dependencies
+find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGL)
+find_package(CGAL REQUIRED COMPONENTS Qt6)
+find_package(Boost REQUIRED)
+find_package(MPFR REQUIRED)
+find_package(SQLite3 REQUIRED)
+
+# Don't use FindBoost
 if (POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
+# -- DEBUGGING AND SANITIZERS -------------------------------------------------
 # Set sanitizer flags based on the compiler
 if (MSVC)
     set(ASAN_FLAG "/fsanitize=address")
@@ -41,13 +55,7 @@ endif()
 option(USE_ASAN "Enable AddressSanitizer" OFF)
 option(USE_TSAN "Enable ThreadSanitizer" OFF)
 
-# Find dependencies
-find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGL)
-find_package(CGAL REQUIRED COMPONENTS Qt6)
-find_package(Boost REQUIRED)
-find_package(MPFR REQUIRED)
-find_package(SQLite3 REQUIRED)
-
+# -- BUILD TARGETS ------------------------------------------------------------
 # Add the executable target
 add_executable(robot_start_position 
     src/main.cpp 
@@ -91,6 +99,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     )
 endif()
 
+# -- SANITIZER FLAGS ----------------------------------------------------------
 if (USE_ASAN)
     target_compile_options(robot_start_position PRIVATE -g ${ASAN_FLAG})
     target_link_options(robot_start_position PRIVATE ${ASAN_FLAG})
