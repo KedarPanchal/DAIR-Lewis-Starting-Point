@@ -253,6 +253,11 @@ CurvedPolygon Cache::build_stadium(
     EPoint e_target = convert_point<EPoint>(target);
     EVector direction = EVector{e_source, e_target};
     direction = direction / CGAL::sqrt(direction.squared_length()) * radius;
+    // TODO: These computations don't taken into account moving along an edge of the wall
+    // This could lead to clipping of the stadium as the center is still placed along the edge of the wall
+    // This can be solved by checking center points on the boundary of the wall and holes
+    // If it's on the boundary, check if on wall or hole
+    // Rotate left on wall, right on hole
     EPoint source_center = e_source + direction;
     EPoint target_center = e_target - direction;
 
