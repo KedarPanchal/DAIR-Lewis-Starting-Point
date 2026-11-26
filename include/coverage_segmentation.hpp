@@ -8,13 +8,13 @@
 #include "graph_construction.hpp"
 #include "cache.hpp"
 
-using SCC = std::tuple<Graph, PolygonSet, fscalar>;
+using SCC = std::tuple<Graph, PolygonSet, escalar>;
 using vector_iter = decltype(std::declval<std::vector<Graph>>().begin());
 
-fscalar polygon_area(const CurvedTraits::Polygon_2& polygon);
-fscalar area(const PolygonSet& ps);
+escalar polygon_area(const CurvedTraits::Polygon_2& polygon);
+escalar area(const PolygonSet& ps);
 
-fscalar compute_coverage(
+void compute_coverage(
     const Graph& scc, 
     std::vector<SCC> areas, 
     Cache& cache

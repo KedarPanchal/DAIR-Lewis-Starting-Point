@@ -35,12 +35,12 @@ private:
     void prepare_segment(std::ostringstream& stream, const Segment& seg);
     Segment parse_segment(const char* segment_string);
     boost::container::small_vector<Curve, 4> build_standard_stadium(
-        const Point& source_center,
-        const Point& target_center,
+        const EPoint& source_center,
+        const EPoint& target_center,
         const fscalar& radius,
-        const Vector& direction);
+        const EVector& direction);
     boost::container::small_vector<Curve, 4> build_circular_stadium(
-        const Point& center,
+        const EPoint& center,
         const fscalar& radius);
     CurvedPolygon build_stadium(
         const Point& source,

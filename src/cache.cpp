@@ -198,23 +198,23 @@ Segment Cache::parse_segment(const char* segment_string) {
 
 // Code to build the edges of a stadium polygon
 boost::container::small_vector<Curve, 4> Cache::build_standard_stadium(
-    const Point& source_center,
-    const Point& target_center,
+    const EPoint& source_center,
+    const EPoint& target_center,
     const fscalar& radius,
-    const Vector& direction) {
-    CGAL::Circle_2<Kernel> source_circle(
+    const EVector& direction) {
+    CGAL::Circle_2<EKernel> source_circle(
         source_center, radius * radius, CGAL::COUNTERCLOCKWISE);
-    CGAL::Circle_2<Kernel> target_circle(
+    CGAL::Circle_2<EKernel> target_circle(
         target_center, radius * radius, CGAL::COUNTERCLOCKWISE);
 
     // Construct the 4 points needed to construct the rectangle
-    Point source1 =
+    EPoint source1 =
         source_center + direction.perpendicular(CGAL::CLOCKWISE);
-    Point source2 =
+    EPoint source2 =
         source_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
-    Point target1 =
+    EPoint target1 =
         target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
-    Point target2 =
+    EPoint target2 =
         target_center + direction.perpendicular(CGAL::CLOCKWISE);
     std::cout << "Stadium points: " << std::setprecision(17)
         << source1 << ", " << source2 << ", " << target1 << ", " << target2 
@@ -223,18 +223,18 @@ boost::container::small_vector<Curve, 4> Cache::build_standard_stadium(
     // If both points are a source or target, construct an arc in
     // counterclockwise order, otherwise construct a line segment
     boost::container::small_vector<Curve, 4> curves;
-    curves.emplace_back(target_circle, convert(target2), convert(target1));
+    curves.emplace_back(target_circle, convert_point<Curve::Point_2>(target2), convert_point<Curve::Point_2>(target1));
     curves.emplace_back(target1, source2);
-    curves.emplace_back(source_circle, convert(source2), convert(source1));
+    curves.emplace_back(source_circle, convert_point<Curve::Point_2>(source2), convert_point<Curve::Point_2>(source1));
     curves.emplace_back(source1, target2);
 
     return curves;
 }
 
 boost::container::small_vector<Curve, 4> Cache::build_circular_stadium(
-    const Point& center,
+    const EPoint& center,
     const fscalar& radius) {
-    CGAL::Circle_2<Kernel> circle(
+    CGAL::Circle_2<EKernel> circle(
         center, radius * radius, CGAL::COUNTERCLOCKWISE);
     return {Curve(circle)};
 }
@@ -249,10 +249,12 @@ CurvedPolygon Cache::build_stadium(
 
     // The circle centers are radius distance along the vector from source
     // to target, in both directions
-    Vector direction = Vector{source, target};
+    EPoint e_source = convert_point<EPoint>(source);
+    EPoint e_target = convert_point<EPoint>(target);
+    EVector direction = EVector{e_source, e_target};
     direction = direction / CGAL::sqrt(direction.squared_length()) * radius;
-    Point source_center = source + direction;
-    Point target_center = target - direction;
+    EPoint source_center = e_source + direction;
+    EPoint target_center = e_target - direction;
 
     const fscalar epsilon = 1e-9 * std::max(1.0, radius);
     const fscalar distance_check = CGAL::squared_distance(source, target);

@@ -9,6 +9,7 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <type_traits>
 
 #include "cgal_types.hpp"
 #include "graph_construction.hpp"
@@ -28,14 +29,21 @@ template <typename To, typename From>
 To convert(const From& x) {
     std::ostringstream str_representation;
     str_representation << std::setprecision(HP_PRECISION) << x;
-    std::istringstream is(str_representation.str());
 
     To result;
-    is >> std::setprecision(HP_PRECISION) >> result;
+    if constexpr (std::is_same_v<To, escalar>) {
+        result = escalar(str_representation.str());
+    } else {
+        std::istringstream is(str_representation.str());
+        is >> std::setprecision(HP_PRECISION) >> result;
+    }
     return result;
 }
 
-Curve::Point_2 convert(const Point& p);
+template <typename To, typename From>
+To convert_point(const From& p) {
+    return To(p.x(), p.y());
+}
 
 std::ostream& operator<<(std::ostream& os, const Graph& g);
 #endif

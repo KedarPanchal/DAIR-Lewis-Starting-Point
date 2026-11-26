@@ -18,25 +18,25 @@
 // Compute area using the shoelace formula for linear edges and the area of a
 // circular segment for curved edges
 // This is used to compute the area of individual holes and outer boundaries
-fscalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
-    fscalar current_area = 0;
+escalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
+    escalar current_area = 0;
     for (auto edge = polygon.curves_begin(); edge != polygon.curves_end();
          ++edge) {
         // Convert from CGAL::Sqrt_extension to fscalar using the formula
         // a0 + a1 * sqrt(root)
-        fscalar x0 =
+        escalar x0 =
             edge->source().x().a0()
             + edge->source().x().a1()
                 * CGAL::sqrt(edge->source().x().root());
-        fscalar y0 =
+        escalar y0 =
             edge->source().y().a0()
             + edge->source().y().a1()
                 * CGAL::sqrt(edge->source().y().root());
-        fscalar x1 =
+        escalar x1 =
             edge->target().x().a0()
             + edge->target().x().a1()
                 * CGAL::sqrt(edge->target().x().root());
-        fscalar y1 =
+        escalar y1 =
             edge->target().y().a0()
             + edge->target().y().a1()
                 * CGAL::sqrt(edge->target().y().root());
@@ -47,18 +47,18 @@ fscalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
             current_area += 0.5 * (x0 * y1 - x1 * y0);
         } else {
             // Area of circular segment formula for curved edges
-            fscalar cx = edge->supporting_circle().center().x();
-            fscalar cy = edge->supporting_circle().center().y();
-            fscalar r2 = edge->supporting_circle().squared_radius();
-            fscalar theta0 = convert<fscalar>(
+            escalar cx = edge->supporting_circle().center().x();
+            escalar cy = edge->supporting_circle().center().y();
+            escalar r2 = edge->supporting_circle().squared_radius();
+            escalar theta0 = convert<fscalar>(
                 boost::multiprecision::atan2(
                     convert<hpscalar>(y0 - cy),
                     convert<hpscalar>(x0 - cx)));
-            fscalar theta1 = convert<fscalar>(
+            escalar theta1 = convert<fscalar>(
                 boost::multiprecision::atan2(
                     convert<hpscalar>(y1 - cy),
                     convert<hpscalar>(x1 - cx)));
-            fscalar dtheta = theta1 - theta0;
+            escalar dtheta = theta1 - theta0;
             current_area += 0.5
                 * (cx * (y1 - y0) - cy * (x1 - x0) + r2 * dtheta);
         }
@@ -68,8 +68,8 @@ fscalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
 }
 
 // Compute area of a polygon set by splitting it into separate polygons
-fscalar area(const PolygonSet& ps) {
-    fscalar total_area = 0;
+escalar area(const PolygonSet& ps) {
+    escalar total_area = 0;
 
     // Find the area of the polygon set by splitting it into its polygons
     // with holes
@@ -102,7 +102,7 @@ void compute_coverage(Graph& scc, std::vector<SCC>& areas, Cache& cache) {
         }
     }
     // Compute the area
-    fscalar current_area = area(ccr);
+    escalar current_area = area(ccr);
     std::cout << "Computed coverage area for SCC\n";
     areas.emplace_back(std::move(scc), std::move(ccr), current_area);
 }
