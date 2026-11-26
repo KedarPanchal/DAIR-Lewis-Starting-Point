@@ -2,6 +2,7 @@
 #define CGAL_TYPES_HPP
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Gps_segment_traits_2.h>
 #include <CGAL/Gps_circle_segment_traits_2.h>
 
@@ -21,7 +22,7 @@
 
 // Geometric types
 using Kernel =
-    CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt;
+    CGAL::Exact_predicates_inexact_constructions_kernel;
 using LinearTraits = CGAL::Gps_segment_traits_2<Kernel>;
 using CurvedTraits = CGAL::Gps_circle_segment_traits_2<Kernel>;
 
@@ -50,8 +51,5 @@ constexpr unsigned int HP_PRECISION = 1000;
 using fscalar = Kernel::FT;
 using hpscalar = boost::multiprecision::number<
     boost::multiprecision::mpfr_float_backend<HP_PRECISION>>;
-
-// Thread types
-constexpr size_t NUM_THREADS = 10;
 
 #endif

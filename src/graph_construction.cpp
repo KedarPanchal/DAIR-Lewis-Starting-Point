@@ -143,7 +143,8 @@ std::optional<Vector> has_edge(
 
     // Avoid division by zero, also, if this occurs, then the vector is
     // degenerate anyway
-    if (d1.squared_length() == 0 || d2.squared_length() == 0) {
+    const fscalar epsilon = 1e-9 * std::max(1.0, std::max(d1.squared_length(), d2.squared_length()));
+    if (d1.squared_length() < epsilon || d2.squared_length() < epsilon) {
         std::cout << "Degenerate transition vector, skipping" << '\n';
         return std::nullopt;
     }

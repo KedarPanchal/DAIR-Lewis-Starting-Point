@@ -35,5 +35,7 @@ To convert(const From& x) {
     return result;
 }
 
+Curve::Point_2 convert(const Point& p);
+
 std::ostream& operator<<(std::ostream& os, const Graph& g);
 #endif

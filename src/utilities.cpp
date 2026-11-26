@@ -54,8 +54,12 @@ std::vector<std::pair<fscalar, fscalar>> read_wallpapering_parameters(
         }
 
         try {
-            fscalar l{l_str};
-            fscalar o_max{o_max_str};
+            std::istringstream l_stream{l_str};
+            std::istringstream o_max_stream{o_max_str};
+            fscalar l;
+            fscalar o_max;
+            l_stream >> l;
+            o_max_stream >> o_max;
             if (l <= 0 || o_max <= 0) {
                 return {};
             }
@@ -93,4 +97,8 @@ std::ostream& operator<<(std::ostream& os, const Graph& g) {
     }
 
     return os;
+}
+
+Curve::Point_2 convert(const Point& p) {
+    return Curve::Point_2(p.x(), p.y());
 }

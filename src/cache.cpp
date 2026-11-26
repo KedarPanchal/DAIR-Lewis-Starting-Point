@@ -216,51 +216,17 @@ boost::container::small_vector<Curve, 4> Cache::build_standard_stadium(
         target_center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
     Point target2 =
         target_center + direction.perpendicular(CGAL::CLOCKWISE);
-    std::cout << "Stadium points: " 
+    std::cout << "Stadium points: " << std::setprecision(17)
         << source1 << ", " << source2 << ", " << target1 << ", " << target2 
         << '\n';
-
-    // Place them all into a vector and sort them in counterclockwise order
-    boost::container::small_vector<Point, 4> rectangle_points{
-        source1, source2, target1, target2};
-    boost::container::small_vector<Point, 4> sorted_rectangle_points;
-    CGAL::convex_hull_2(
-        rectangle_points.begin(),
-        rectangle_points.end(),
-        std::back_inserter(sorted_rectangle_points));
 
     // If both points are a source or target, construct an arc in
     // counterclockwise order, otherwise construct a line segment
     boost::container::small_vector<Curve, 4> curves;
-    for (size_t i = 0; i < 4; ++i) {
-        size_t next = (i + 1) % 4;
-        if ((sorted_rectangle_points[i] == source1
-             || sorted_rectangle_points[i] == source2)
-            && (sorted_rectangle_points[next] == source1
-                || sorted_rectangle_points[next] == source2)) {
-            CurvedTraits::Point_2 source_point(
-                sorted_rectangle_points[i].x(),
-                sorted_rectangle_points[i].y());
-            CurvedTraits::Point_2 target_point(
-                sorted_rectangle_points[next].x(),
-                sorted_rectangle_points[next].y());
-            curves.emplace_back(source_circle, source_point, target_point);
-        } else if ((sorted_rectangle_points[i] == target1
-                    || sorted_rectangle_points[i] == target2)
-                   && (sorted_rectangle_points[next] == target1
-                       || sorted_rectangle_points[next] == target2)) {
-            CurvedTraits::Point_2 source_point(
-                sorted_rectangle_points[i].x(),
-                sorted_rectangle_points[i].y());
-            CurvedTraits::Point_2 target_point(
-                sorted_rectangle_points[next].x(),
-                sorted_rectangle_points[next].y());
-            curves.emplace_back(target_circle, source_point, target_point);
-        } else {
-            curves.emplace_back(
-                sorted_rectangle_points[i], sorted_rectangle_points[next]);
-        }
-    }
+    curves.emplace_back(target_circle, convert(target2), convert(target1));
+    curves.emplace_back(target1, source2);
+    curves.emplace_back(source_circle, convert(source2), convert(source1));
+    curves.emplace_back(source1, target2);
 
     return curves;
 }
@@ -288,14 +254,20 @@ CurvedPolygon Cache::build_stadium(
     Point source_center = source + direction;
     Point target_center = target - direction;
 
-    // If source and target centers are the same, then the stadium is just
-    // a circle
-    boost::container::small_vector<Curve, 4> curves =
-        source_center == target_center
-            ? this->build_circular_stadium(source_center, radius)
-            : this->build_standard_stadium(
-                source_center, target_center, radius, direction);
-
+    const fscalar epsilon = 1e-9 * std::max(1.0, radius);
+    const fscalar distance_check = CGAL::squared_distance(source, target);
+    boost::container::small_vector<Curve, 4> curves;
+    if (distance_check < (2 * radius - epsilon) * (2 * radius - epsilon)) {
+        std::cout << "Source and target centers are too close, no stadium can be constructed, building empty stadium." << '\n';
+        return CurvedPolygon();
+    } else if (distance_check < (2 * radius + epsilon) * (2 * radius + epsilon)) {
+        std::cout << "Source and target centers are close, building circular stadium." << '\n';
+        curves = this->build_circular_stadium(source_center, radius);
+    } else {
+        std::cout << "Building standard stadium." << '\n';
+        curves = this->build_standard_stadium(
+            source_center, target_center, radius, direction);
+    }
     CGAL::Arrangement_2<CurvedTraits> arr;
     CGAL::insert(arr, curves.begin(), curves.end());
 
