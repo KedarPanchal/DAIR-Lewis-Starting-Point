@@ -50,7 +50,7 @@ int main() {
         std::get<std::pair<fscalar, fscalar>>(maybe_robot_parameters).second;
 
     // Create the cache for graph edges
-    Cache cache("graph_cache.db");
+    Cache cache("graph_cache.db", wall_space);
 
     // Construct the graph
     Graph graph =

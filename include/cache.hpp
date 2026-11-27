@@ -22,6 +22,7 @@ private:
     sqlite3* db;
     sqlite3_stmt* insert_statement;
     sqlite3_stmt* select_statement;
+    EHoledPolygon wall_space;
 
     void teardown();
     void handle_sqlite_error(
@@ -34,25 +35,9 @@ private:
     void prepare_statements();
     void prepare_segment(std::ostringstream& stream, const Segment& seg);
     Segment parse_segment(const char* segment_string);
-    boost::container::small_vector<Curve, 4> build_standard_stadium(
-        const EPoint& source_center,
-        const EPoint& target_center,
-        const fscalar& radius,
-        const EVector& direction);
-    boost::container::small_vector<Curve, 4> build_circular_stadium(
-        const EPoint& center,
-        const fscalar& radius);
-    CurvedPolygon build_stadium(
-        const Point& source,
-        const Point& target,
-        const fscalar& radius);
-    PolygonSet compute_coverage(
-        const Segment& source,
-        const Segment& target,
-        const fscalar& radius);
 
 public:
-    Cache(const std::string& name);
+    Cache(const std::string& name, const HoledPolygon& wall_space);
     Cache(const Cache&) = delete;
     Cache(Cache&&) = delete;
     Cache& operator=(const Cache&) = delete;
