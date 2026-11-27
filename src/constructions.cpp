@@ -73,7 +73,7 @@ EPoint circle_center(const EPoint& source, const EHoledPolygon& wall_space, cons
     return source + direction;
 }
 
-std::optional<CurvedPolygon> build_stadium(
+CurvedPolygon build_stadium(
     const Point& source,
     const Point& target,
     const fscalar& radius,
@@ -90,15 +90,10 @@ std::optional<CurvedPolygon> build_stadium(
     EPoint source_center = circle_center(e_source, wall_space, e_radius);
     EPoint target_center = circle_center(e_target, wall_space, e_radius);
 
-    const fscalar epsilon = 1e-9 * std::max(1.0, radius);
-    const fscalar distance_check = CGAL::squared_distance(source, target);
     boost::container::small_vector<Curve, 4> curves;
-    if (distance_check < (2 * radius - epsilon) * (2 * radius - epsilon)) {
-        std::cout << "Source and target centers are too close, no stadium can be constructed, building empty stadium." << '\n';
-        return std::nullopt;
-    } else if (distance_check < (2 * radius + epsilon) * (2 * radius + epsilon)) {
+    if (source_center == target_center) {
         std::cout << "Source and target centers are close, building circular stadium." << '\n';
-        curves = build_circular_stadium(CGAL::midpoint(source_center, target_center), e_radius);
+        curves = build_circular_stadium(source_center, e_radius);
     } else {
         std::cout << "Building standard stadium." << '\n';
         EVector direction{source_center, target_center};
@@ -137,21 +132,9 @@ PolygonSet compute_coverage(
     auto stadium1 = build_stadium(source.source(), target.target(), radius, wall_space);
     auto stadium2 = build_stadium(source.target(), target.source(), radius, wall_space);
 
-    if (stadium1.has_value() && stadium2.has_value()) {
-        std::cout << "Both stadiums constructed successfully." << '\n';
-        PolygonSet coverage{std::move(*stadium1)};
-        coverage.intersection(std::move(*stadium2));
-        return coverage;
-    } else if (stadium1.has_value()) {
-        std::cout << "Only stadium1 constructed successfully." << '\n';
-        return PolygonSet{std::move(*stadium1)};
-    } else if (stadium2.has_value()) {
-        std::cout << "Only stadium2 constructed successfully." << '\n';
-        return PolygonSet{std::move(*stadium2)};
-    } else {
-        std::cout << "Neither stadium could be constructed." << '\n';
-        return PolygonSet();
-    }
+    PolygonSet coverage{std::move(stadium1)};
+    coverage.intersection(std::move(stadium2));
+    return coverage;
 }
 
 

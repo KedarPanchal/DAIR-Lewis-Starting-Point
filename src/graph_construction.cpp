@@ -124,8 +124,7 @@ std::optional<Vector> has_edge(
     const Segment& target,
     hpscalar theta_max,
     const AABBTree& tree) {
-    hpscalar theta_max_radians =
-        theta_max * boost::math::constants::pi<hpscalar>() / 180;
+    hpscalar theta_max_radians = theta_max * boost::math::constants::pi<hpscalar>() / 180;
     Vector d1 = Vector{source.source(), target.target()}.transform(
         Transformation(
             CGAL::ROTATION,
