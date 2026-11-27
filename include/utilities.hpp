@@ -45,5 +45,27 @@ To convert_point(const From& p) {
     return To(p.x(), p.y());
 }
 
+template <typename To, typename From>
+To convert_polygon(const From& p) {
+    std::vector<typename To::Point_2> points;
+    for (const auto& point : p.container()) {
+        points.push_back(convert_point<typename To::Point_2>(point));
+    }
+    return To(points.begin(), points.end());
+}
+
+template <typename To, typename From>
+To convert_polygon_with_holes(const From& p) {
+    typename To::Polygon_2 boundary = convert_polygon<typename To::Polygon_2>(p.outer_boundary());
+    std::vector<typename To::Polygon_2> holes;
+    for (const auto& hole : p.holes()) {
+        typename To::Polygon_2 hole_poly = convert_polygon<typename To::Polygon_2>(hole);
+        hole_poly.reverse_orientation();
+        holes.push_back(hole_poly);
+    }
+    To result(boundary, holes.begin(), holes.end());
+    return result;
+}
+
 std::ostream& operator<<(std::ostream& os, const Graph& g);
 #endif
