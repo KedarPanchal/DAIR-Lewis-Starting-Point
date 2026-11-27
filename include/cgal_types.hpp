@@ -57,6 +57,8 @@ using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits_2<Kernel, CGAL::AABB_segment_
 constexpr unsigned int HP_PRECISION = 1000;
 using fscalar = Kernel::FT;
 using escalar = EKernel::FT;
+const fscalar EPSILON = fscalar(1e-9);
+const fscalar EPSILON_SQUARED = EPSILON * EPSILON;
 const escalar EXACT_EPSILON = escalar(1e-9);
 const escalar EXACT_EPSILON_SQUARED = EXACT_EPSILON * EXACT_EPSILON;
 

@@ -138,8 +138,8 @@ std::optional<Vector> has_edge(
 
     // A right turn is when the angle between two vectors is greater than pi
     // radians
-    if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN) {
-        std::cout << "Angle between vectors is a right turn, skipping" << '\n';
+    if (CGAL::orientation(d1, d2) == CGAL::RIGHT_TURN || CGAL::orientation(d1, d2) == CGAL::COLLINEAR) {
+        std::cout << "Angle between vectors is pi or larger, skipping" << '\n';
         return std::nullopt;
     }
 
@@ -154,10 +154,11 @@ std::optional<Vector> has_edge(
         source.target(),
         Vector{source.target(), target.source()},
         tree);
+    fscalar membership_epsilon = EPSILON_SQUARED * std::max(1.0, target.squared_length());
     if (!p1.has_value()
         || !p2.has_value()
-        || !target.has_on(*p1)
-        || !target.has_on(*p2)) {
+        || CGAL::squared_distance(target, *p1) >= membership_epsilon
+        || CGAL::squared_distance(target, *p2) >= membership_epsilon) {
         std::cout << "Raycast failed, skipping" << '\n';
         std::cout << "p1 exists: " << p1.has_value() << '\n';
         std::cout << "p2 exists: " << p2.has_value() << '\n';
@@ -169,13 +170,8 @@ std::optional<Vector> has_edge(
     }
 
     // Create a quadrilateral with source.source(), source.target(), p1, and p2
-    boost::container::small_vector<Point, 4> quad_points{
-        source.source(), source.target(), *p2, *p1};
-    Polygon quadrilateral;
-    CGAL::convex_hull_2(
-        quad_points.begin(),
-        quad_points.end(),
-        std::back_inserter(quadrilateral));
+    boost::container::small_vector<Point, 4> quad_points{source.source(), source.target(), *p2, *p1};
+    Polygon quadrilateral(quad_points.begin(), quad_points.end());
 
     // Check if any vertices of w are contained in the quadrilateral
     for (const auto& vertex : w.outer_boundary().vertices()) {
