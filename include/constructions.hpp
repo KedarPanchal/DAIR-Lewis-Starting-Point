@@ -14,15 +14,15 @@ enum class BoundaryCheckResult {
 boost::container::small_vector<Curve, 4> build_standard_stadium(
     const EPoint& source_center,
     const EPoint& target_center,
-    const fscalar& radius,
+    const escalar& radius,
     const EVector& direction);
 boost::container::small_vector<Curve, 4> build_circular_stadium(
     const EPoint& center,
-    const fscalar& radius);
-CurvedPolygon build_stadium(
+    const escalar& radius);
+std::optional<CurvedPolygon> build_stadium(
     const Point& source,
     const Point& target,
-    const fscalar& radius,
+    const escalar& radius,
     const EHoledPolygon& wall_space);
 BoundaryCheckResult check_boundary(
     const EPoint& point, 

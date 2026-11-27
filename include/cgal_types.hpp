@@ -42,6 +42,7 @@ using Transformation = CGAL::Aff_transformation_2<Kernel>;
 
 // Exact types
 using EPoint = CGAL::Point_2<EKernel>;
+using ESegment = CGAL::Segment_2<EKernel>;
 using EVector = CGAL::Vector_2<EKernel>;
 using Curve = CurvedTraits::Curve_2;
 using EPolygon = CGAL::Polygon_2<ELinearTraits>;
@@ -56,6 +57,8 @@ using AABBTree = CGAL::AABB_tree<CGAL::AABB_traits_2<Kernel, CGAL::AABB_segment_
 constexpr unsigned int HP_PRECISION = 1000;
 using fscalar = Kernel::FT;
 using escalar = EKernel::FT;
+const escalar EXACT_EPSILON = escalar(1e-9);
+const escalar EXACT_EPSILON_SQUARED = EXACT_EPSILON * EXACT_EPSILON;
 using hpscalar = boost::multiprecision::number<boost::multiprecision::mpfr_float_backend<HP_PRECISION>>;
 
 // Helper function for converting types
