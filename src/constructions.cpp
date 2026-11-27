@@ -2,7 +2,6 @@
 
 #include <iomanip>
 #include <iostream>
-#include <optional>
 
 #include <CGAL/Kernel/global_functions_2.h>
 #include <boost/container/small_vector.hpp>
@@ -46,29 +45,8 @@ boost::container::small_vector<Curve, 4> build_circular_stadium(
     return {Curve(circle)};
 }
 
-std::optional<ESegment> containing_edge(const EPoint& point, const EHoledPolygon& wall_space) {
-    for (const auto& edge : wall_space.outer_boundary().edges()) {
-        if (CGAL::squared_distance(edge, point) < EXACT_EPSILON_SQUARED) {
-            return edge;
-        }
-    }
-    for (const auto& hole : wall_space.holes()) {
-        for (const auto& edge : hole.edges()) {
-            if (CGAL::squared_distance(edge, point) < EXACT_EPSILON_SQUARED) {
-                return edge;
-            }
-        }
-    }
-    return std::nullopt;
-}
-
-EPoint circle_center(const EPoint& source, const EHoledPolygon& wall_space, const escalar& radius) {
-    std::optional<ESegment> edge = containing_edge(source, wall_space);
-    if (!edge) {
-        std::cerr << "Error: Source point " << source.x() << ", " << source.y() << " is not on the boundary of the wall space." << '\n';
-        throw std::runtime_error("Source point is not on the boundary of the wall space.");
-    }
-    EVector direction = edge->to_vector().perpendicular(CGAL::COUNTERCLOCKWISE);
+EPoint circle_center(const EPoint& source, const ESegment& source_segment, const escalar& radius) {
+    EVector direction = source_segment.to_vector().perpendicular(CGAL::COUNTERCLOCKWISE);
     direction = direction / CGAL::sqrt(direction.squared_length()) * radius;
     return source + direction;
 }
@@ -76,6 +54,8 @@ EPoint circle_center(const EPoint& source, const EHoledPolygon& wall_space, cons
 CurvedPolygon build_stadium(
     const Point& source,
     const Point& target,
+    const ESegment& source_segment,
+    const ESegment& target_segment,
     const fscalar& radius,
     const EHoledPolygon& wall_space) {
     std::cout << "Source: " << source
@@ -87,8 +67,8 @@ CurvedPolygon build_stadium(
     EPoint e_source = convert_point<EPoint>(source);
     EPoint e_target = convert_point<EPoint>(target);
     escalar e_radius = convert<escalar>(radius);
-    EPoint source_center = circle_center(e_source, wall_space, e_radius);
-    EPoint target_center = circle_center(e_target, wall_space, e_radius);
+    EPoint source_center = circle_center(e_source, source_segment, e_radius);
+    EPoint target_center = circle_center(e_target, target_segment, e_radius);
 
     boost::container::small_vector<Curve, 4> curves;
     if (source_center == target_center) {
@@ -129,8 +109,10 @@ PolygonSet compute_coverage(
     const Segment& target,
     const fscalar& radius,
     const EHoledPolygon& wall_space) {
-    auto stadium1 = build_stadium(source.source(), target.target(), radius, wall_space);
-    auto stadium2 = build_stadium(source.target(), target.source(), radius, wall_space);
+    ESegment e_source = convert_segment<ESegment>(source);
+    ESegment e_target = convert_segment<ESegment>(target);
+    auto stadium1 = build_stadium(source.source(), target.target(), e_source, e_target, radius, wall_space);
+    auto stadium2 = build_stadium(source.target(), target.source(), e_source, e_target, radius, wall_space);
 
     PolygonSet coverage{std::move(stadium1)};
     coverage.intersection(std::move(stadium2));

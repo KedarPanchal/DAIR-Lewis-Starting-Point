@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
+#include <utility>
+#include <type_traits>
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -65,22 +67,33 @@ const escalar EXACT_EPSILON_SQUARED = EXACT_EPSILON * EXACT_EPSILON;
 // Helper function for converting types
 template <typename To, typename From>
 To convert(const From& x) {
-    std::ostringstream str_representation;
-    str_representation << std::setprecision(HP_PRECISION) << x;
-
-    To result;
-    if constexpr (std::is_same_v<To, escalar>) {
-        result = escalar(str_representation.str());
+    if constexpr (std::is_constructible_v<To, From>) {
+        return To(x);
     } else {
-        std::istringstream is(str_representation.str());
-        is >> std::setprecision(HP_PRECISION) >> result;
+        std::ostringstream str_representation;
+        str_representation << std::setprecision(HP_PRECISION) << x;
+
+        if constexpr (std::is_constructible_v<To, std::string>) {
+            return To(str_representation.str());
+        } else {
+            To result = 0;
+            std::istringstream is(str_representation.str());
+            is >> std::setprecision(HP_PRECISION) >> result;
+            return result;
+        }
     }
-    return result;
 }
 
 template <typename To, typename From>
 To convert_point(const From& p) {
-    return To(p.x(), p.y());
+    using FT = std::remove_cv_t<std::remove_reference_t<decltype(std::declval<To>().x())>>;
+    return To(convert<FT>(p.x()), convert<FT>(p.y()));
+}
+
+template <typename To, typename From>
+To convert_segment(const From& s) {
+    using PointType = std::remove_cv_t<std::remove_reference_t<decltype(std::declval<To>().source())>>;
+    return To(convert_point<PointType>(s.source()), convert_point<PointType>(s.target()));
 }
 
 template <typename To, typename From>
