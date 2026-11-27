@@ -1,5 +1,6 @@
 #include "constructions.hpp"
 
+#include <CGAL/Kernel/global_functions_2.h>
 #include <boost/container/small_vector.hpp>
 
 // Code to build the edges of a stadium polygon
@@ -41,10 +42,32 @@ boost::container::small_vector<Curve, 4> build_circular_stadium(
     return {Curve(circle)};
 }
 
+BoundaryCheckResult check_boundary(const EPoint& point, const EHoledPolygon& wall_space) {
+    if (wall_space.outer_boundary().has_on_boundary(point)) {
+        return BoundaryCheckResult::OUTER_BOUNDARY;
+    }
+    for (const auto& hole : wall_space.holes()) {
+        if (hole.has_on_boundary(point)) {
+            return BoundaryCheckResult::HOLE_BOUNDARY;
+        }
+    }
+    return BoundaryCheckResult::BOUNDED;
+}
+
+void adjust_stadium_center(EPoint& center, const EVector& direction, const EHoledPolygon& wall_space) {
+    BoundaryCheckResult boundary_check = check_boundary(center, wall_space);
+    if (boundary_check == BoundaryCheckResult::OUTER_BOUNDARY) {
+        center = center + direction.perpendicular(CGAL::COUNTERCLOCKWISE);
+    } else if (boundary_check == BoundaryCheckResult::HOLE_BOUNDARY) {
+        center = center + direction.perpendicular(CGAL::CLOCKWISE);
+    }
+}
+
 CurvedPolygon build_stadium(
     const Point& source,
     const Point& target,
-    const fscalar& radius) {
+    const fscalar& radius,
+    const EHoledPolygon& wall_space) {
     std::cout << "Source: " << source
                             << ", Target: " << target
                             << ", Radius: " << radius << '\n';
@@ -62,6 +85,8 @@ CurvedPolygon build_stadium(
     // Rotate left on wall, right on hole
     EPoint source_center = e_source + direction;
     EPoint target_center = e_target - direction;
+    adjust_stadium_center(source_center, direction, wall_space);
+    adjust_stadium_center(target_center, direction, wall_space);
 
     const fscalar epsilon = 1e-9 * std::max(1.0, radius);
     const fscalar distance_check = CGAL::squared_distance(source, target);
@@ -71,7 +96,7 @@ CurvedPolygon build_stadium(
         return CurvedPolygon();
     } else if (distance_check < (2 * radius + epsilon) * (2 * radius + epsilon)) {
         std::cout << "Source and target centers are close, building circular stadium." << '\n';
-        curves = build_circular_stadium(source_center, radius);
+        curves = build_circular_stadium(CGAL::midpoint(source_center, target_center), radius);
     } else {
         std::cout << "Building standard stadium." << '\n';
         curves = build_standard_stadium(
@@ -105,11 +130,12 @@ CurvedPolygon build_stadium(
 PolygonSet compute_coverage(
     const Segment& source,
     const Segment& target,
-    const fscalar& radius) {
+    const fscalar& radius,
+    const EHoledPolygon& wall_space) {
     auto stadium1 =
-        build_stadium(source.source(), target.target(), radius);
+        build_stadium(source.source(), target.target(), radius, wall_space);
     auto stadium2 =
-        build_stadium(source.target(), target.source(), radius);
+        build_stadium(source.target(), target.source(), radius, wall_space);
 
     PolygonSet coverage{std::move(stadium1)};
     coverage.intersection(std::move(stadium2));

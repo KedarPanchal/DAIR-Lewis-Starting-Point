@@ -196,8 +196,6 @@ Segment Cache::parse_segment(const char* segment_string) {
     return Segment{source, target};
 }
 
-// -- STADIUM CONSTRUCTION ----------------------------------------------------
-
 // -- CACHE API ---------------------------------------------------------------
 
 sqlite3_int64 Cache::insert_coverage_area(
@@ -300,7 +298,7 @@ PolygonSet Cache::get_coverage_area(size_t id) {
     std::istringstream radius_stream(radius_string);
     radius_stream >> std::setprecision(HP_PRECISION) >> radius_hp;
     fscalar radius = convert<fscalar>(radius_hp);
-    PolygonSet result = compute_coverage(source, target, radius);
+    PolygonSet result = compute_coverage(source, target, radius, this->wall_space);
 
     // Step through and reset select statement again to allow future reuse
     step_result = sqlite3_step(this->select_statement);
