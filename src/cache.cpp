@@ -180,16 +180,16 @@ void Cache::prepare_statements() {
 
 void Cache::prepare_segment(std::ostringstream& stream, const Segment& seg) {
     stream << std::setprecision(HP_PRECISION);
-    hpscalar x1 = convert<hpscalar>(seg.source().x());
-    hpscalar y1 = convert<hpscalar>(seg.source().y());
-    hpscalar x2 = convert<hpscalar>(seg.target().x());
-    hpscalar y2 = convert<hpscalar>(seg.target().y());
+    fscalar x1 = seg.source().x();
+    fscalar y1 = seg.source().y();
+    fscalar x2 = seg.target().x();
+    fscalar y2 = seg.target().y();
     stream << x1 << " " << y1 << " " << x2 << " " << y2;
 }
 
 Segment Cache::parse_segment(const char* segment_string) {
     std::istringstream stream(segment_string);
-    hpscalar x1, y1, x2, y2;
+    fscalar x1, y1, x2, y2;
     stream >> std::setprecision(HP_PRECISION) >> x1 >> y1 >> x2 >> y2;
     Point source{convert<fscalar>(x1), convert<fscalar>(y1)};
     Point target{convert<fscalar>(x2), convert<fscalar>(y2)};
@@ -208,7 +208,6 @@ sqlite3_int64 Cache::insert_coverage_area(
     this->prepare_segment(source_string, source);
     this->prepare_segment(target_string, target);
 
-    hpscalar radius_hp = convert<hpscalar>(radius);
     radius_string << std::setprecision(HP_PRECISION) << radius;
 
     // Bind the string representation and polygon count to the insert
@@ -294,10 +293,9 @@ PolygonSet Cache::get_coverage_area(size_t id) {
     // Process results
     Segment source = this->parse_segment(source_string);
     Segment target = this->parse_segment(target_string);
-    hpscalar radius_hp;
+    fscalar radius;
     std::istringstream radius_stream(radius_string);
-    radius_stream >> std::setprecision(HP_PRECISION) >> radius_hp;
-    fscalar radius = convert<fscalar>(radius_hp);
+    radius_stream >> std::setprecision(HP_PRECISION) >> radius;
     PolygonSet result = compute_coverage(source, target, radius, this->wall_space);
 
     // Step through and reset select statement again to allow future reuse

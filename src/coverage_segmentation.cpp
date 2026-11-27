@@ -50,14 +50,14 @@ escalar polygon_area(const CurvedTraits::Polygon_2& polygon) {
             escalar cx = edge->supporting_circle().center().x();
             escalar cy = edge->supporting_circle().center().y();
             escalar r2 = edge->supporting_circle().squared_radius();
-            escalar theta0 = convert<fscalar>(
-                boost::multiprecision::atan2(
-                    convert<hpscalar>(y0 - cy),
-                    convert<hpscalar>(x0 - cx)));
+            escalar theta0 = convert<escalar>(
+                std::atan2(
+                    convert<fscalar>(y0 - cy),
+                    convert<fscalar>(x0 - cx)));
             escalar theta1 = convert<fscalar>(
-                boost::multiprecision::atan2(
-                    convert<hpscalar>(y1 - cy),
-                    convert<hpscalar>(x1 - cx)));
+                std::atan2(
+                    convert<fscalar>(y1 - cy),
+                    convert<fscalar>(x1 - cx)));
             escalar dtheta = theta1 - theta0;
             current_area += 0.5
                 * (cx * (y1 - y0) - cy * (x1 - x0) + r2 * dtheta);

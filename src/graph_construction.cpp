@@ -19,7 +19,6 @@
 #include <boost/math/constants/constants.hpp>
 
 #include "cgal_types.hpp"
-#include "utilities.hpp"
 #include "cache.hpp"
 
 // -- HELPER FUNCTIONS --------------------------------------------------------
@@ -46,9 +45,7 @@ void add_layer_helper(const Polygon& w, Graph& g, fscalar l, fscalar o_max) {
         } else if (length > l) {
             // Ceiling value since CGAL doesn't expose a ceil function for
             // Kernel::FT
-            size_t ceiling = boost::multiprecision::ceil(
-                convert<hpscalar>((length - l) / o_max))
-                .convert_to<size_t>();
+            size_t ceiling = static_cast<size_t>(std::ceil((length - l) / o_max));
             fscalar o = (length - l) / ceiling;
 
             Point x1 = eit->source();
@@ -122,23 +119,14 @@ std::optional<Vector> has_edge(
     const HoledPolygon& w,
     const Segment& source,
     const Segment& target,
-    hpscalar theta_max,
+    fscalar theta_max,
     const AABBTree& tree) {
-    hpscalar theta_max_radians = theta_max * boost::math::constants::pi<hpscalar>() / 180;
+    fscalar theta_max_radians = theta_max * boost::math::constants::pi<fscalar>() / 180;
     Vector d1 = Vector{source.source(), target.target()}.transform(
-        Transformation(
-            CGAL::ROTATION,
-            convert<fscalar>(
-                boost::multiprecision::sin(theta_max_radians)),
-            convert<fscalar>(
-                boost::multiprecision::cos(theta_max_radians))));
+        Transformation(CGAL::ROTATION, std::sin(theta_max_radians), std::cos(theta_max_radians)));
     Vector d2 = Vector{source.target(), target.source()}.transform(
         Transformation(
-            CGAL::ROTATION,
-            convert<fscalar>(
-                boost::multiprecision::sin(-theta_max_radians)),
-            convert<fscalar>(
-                boost::multiprecision::cos(-theta_max_radians))));
+            CGAL::ROTATION, std::sin(-theta_max_radians), std::cos(-theta_max_radians)));
 
     // Avoid division by zero, also, if this occurs, then the vector is
     // degenerate anyway
@@ -247,15 +235,13 @@ Graph construct_graph(
     AABBTree tree(segments.begin(), segments.end());
     tree.build();
     
-    // Multithreaded processing of graph views
-    hpscalar theta_max_hp = convert<hpscalar>(theta_max);
     for (auto& [node, edges] : graph) {
         for (const auto& [other_node, _] : graph) {
             auto maybe_edge = has_edge(
                 w,
                 node.segment(),
                 other_node.segment(),
-                theta_max_hp,
+                theta_max,
                 tree);
 
             if (!maybe_edge.has_value()) continue;

@@ -72,7 +72,7 @@ std::optional<Vector> has_edge(
     const HoledPolygon& w,
     const Segment& source,
     const Segment& target,
-    hpscalar theta_max,
+    fscalar theta_max,
     const AABBTree& tree
     );
 

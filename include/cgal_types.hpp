@@ -59,7 +59,6 @@ using fscalar = Kernel::FT;
 using escalar = EKernel::FT;
 const escalar EXACT_EPSILON = escalar(1e-9);
 const escalar EXACT_EPSILON_SQUARED = EXACT_EPSILON * EXACT_EPSILON;
-using hpscalar = boost::multiprecision::number<boost::multiprecision::mpfr_float_backend<HP_PRECISION>>;
 
 // Helper function for converting types
 template <typename To, typename From>
